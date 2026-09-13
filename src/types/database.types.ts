@@ -307,6 +307,11 @@ export type Database = {
           periode: string;
           paid_at: string | null;
           metadata: Json | null;
+          idempotency_key: string | null;
+          failure_reason: string | null;
+          provider_metadata: Json | null;
+          tax_calculation: Json | null;
+          notifications_sent: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -323,6 +328,11 @@ export type Database = {
           periode: string;
           paid_at?: string | null;
           metadata?: Json | null;
+          idempotency_key?: string | null;
+          failure_reason?: string | null;
+          provider_metadata?: Json | null;
+          tax_calculation?: Json | null;
+          notifications_sent?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -339,6 +349,11 @@ export type Database = {
           periode?: string;
           paid_at?: string | null;
           metadata?: Json | null;
+          idempotency_key?: string | null;
+          failure_reason?: string | null;
+          provider_metadata?: Json | null;
+          tax_calculation?: Json | null;
+          notifications_sent?: boolean;
           created_at?: string;
           updated_at?: string;
         };

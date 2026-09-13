@@ -50,9 +50,8 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   ],
   locataire: [
     { label: 'Accueil', href: ROUTES.LOCATAIRE.HOME, icon: Home },
-    { label: 'Mes contrats', href: ROUTES.LOCATAIRE.CONTRACTS, icon: FileText },
-    { label: 'Mes paiements', href: ROUTES.LOCATAIRE.PAYMENTS, icon: CreditCard },
-    { label: 'Mes reçus', href: ROUTES.LOCATAIRE.RECEIPTS, icon: Receipt },
+    { label: 'Paiements', href: ROUTES.LOCATAIRE.PAYMENTS, icon: CreditCard },
+    { label: 'Reçus', href: ROUTES.LOCATAIRE.RECEIPTS, icon: Receipt },
     { label: 'Notifications', href: ROUTES.LOCATAIRE.NOTIFICATIONS, icon: Bell },
     { label: 'Profil', href: ROUTES.LOCATAIRE.PROFILE, icon: User },
   ],
