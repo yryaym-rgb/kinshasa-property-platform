@@ -1,0 +1,68 @@
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  .no-print,
+  nav,
+  aside,
+  .sidebar,
+  .bottom-nav,
+  .top-bar,
+  button:not(.print-visible) {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-page {
+    page-break-after: always;
+  }
+
+  .print-receipt,
+  .print-contract {
+    max-width: 100%;
+    margin: 0;
+    padding: 20mm;
+    border: none;
+    box-shadow: none;
+  }
+
+  .print-header {
+    border-bottom: 2px solid #1e40af;
+    padding-bottom: 10mm;
+    margin-bottom: 10mm;
+  }
+
+  .print-footer {
+    border-top: 1px solid #ccc;
+    padding-top: 5mm;
+    margin-top: 10mm;
+    font-size: 10pt;
+    color: #666;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 4pt 8pt;
+    text-align: left;
+  }
+
+  th {
+    background: #f0f0f0;
+  }
+
+  @page {
+    margin: 15mm;
+    size: A4;
+  }
+}
