@@ -210,6 +210,12 @@ export type Database = {
           terms: Json | null;
           signed_at: string | null;
           terminated_at: string | null;
+          metadata: Json;
+          notes_internes: string | null;
+          signature_token: string | null;
+          signed_by_bailleur_at: string | null;
+          signed_by_locataire_at: string | null;
+          pdf_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -229,6 +235,12 @@ export type Database = {
           terms?: Json | null;
           signed_at?: string | null;
           terminated_at?: string | null;
+          metadata?: Json;
+          notes_internes?: string | null;
+          signature_token?: string | null;
+          signed_by_bailleur_at?: string | null;
+          signed_by_locataire_at?: string | null;
+          pdf_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -248,6 +260,12 @@ export type Database = {
           terms?: Json | null;
           signed_at?: string | null;
           terminated_at?: string | null;
+          metadata?: Json;
+          notes_internes?: string | null;
+          signature_token?: string | null;
+          signed_by_bailleur_at?: string | null;
+          signed_by_locataire_at?: string | null;
+          pdf_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -644,7 +662,13 @@ export type Database = {
       kyc_status: 'pending' | 'submitted' | 'verified' | 'rejected';
       property_type: 'Appartement' | 'Studio' | 'Villa' | 'Bureau' | 'Magasin' | 'Entrepôt';
       property_status: 'disponible' | 'occupe' | 'maintenance' | 'inactif';
-      contract_status: 'brouillon' | 'actif' | 'suspendu' | 'resilie' | 'expire';
+      contract_status:
+        | 'brouillon'
+        | 'en_attente_signature'
+        | 'actif'
+        | 'suspendu'
+        | 'resilie'
+        | 'expire';
       payment_method: 'Orange Money' | 'M-Pesa' | 'Airtel Money' | 'Bank' | 'Cash';
       payment_status: 'en_attente' | 'en_cours' | 'complete' | 'echoue' | 'rembourse';
       tax_status: 'calcule' | 'declare' | 'paye' | 'en_retard' | 'exonere';

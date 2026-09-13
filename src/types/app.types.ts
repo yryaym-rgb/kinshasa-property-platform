@@ -21,7 +21,13 @@ export type UserRole =
 
 export type PaymentMethod = (typeof PAYMENT_PROVIDERS)[number];
 export type PaymentStatus = 'en_attente' | 'en_cours' | 'complete' | 'echoue' | 'rembourse';
-export type ContractStatus = 'brouillon' | 'actif' | 'suspendu' | 'resilie' | 'expire';
+export type ContractStatus =
+  | 'brouillon'
+  | 'en_attente_signature'
+  | 'actif'
+  | 'suspendu'
+  | 'resilie'
+  | 'expire';
 export type PropertyType = (typeof PROPERTY_TYPES)[number];
 export type PropertyStatus = 'disponible' | 'occupe' | 'maintenance' | 'inactif';
 export type TaxStatus = 'calcule' | 'declare' | 'paye' | 'en_retard' | 'exonere';
