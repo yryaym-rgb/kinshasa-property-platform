@@ -27,10 +27,16 @@ export const ROUTES = {
 
   LOCATAIRE: {
     ROOT: '/locataire',
-    HOME: '/locataire/accueil',
+    HOME: '/locataire/tableau-de-bord',
+    DASHBOARD: '/locataire/tableau-de-bord',
     CONTRACTS: '/locataire/contrats',
+    CONTRACT_DETAIL: '/locataire/contrats/:id',
     PAYMENTS: '/locataire/paiements',
+    PAYMENT_NEW: '/locataire/paiements/nouveau',
+    PAYMENT_SUCCESS: '/locataire/paiements/succes',
+    PAYMENT_FAILED: '/locataire/paiements/echec',
     RECEIPTS: '/locataire/recus',
+    RECEIPT_DETAIL: '/locataire/recus/:id',
     NOTIFICATIONS: '/locataire/notifications',
     PROFILE: '/locataire/profil',
   },

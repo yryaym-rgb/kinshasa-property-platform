@@ -16,7 +16,6 @@ import { RegisterPage } from '@/pages/auth/RegisterPage';
 import { VerifyOTPPage } from '@/pages/auth/VerifyOTPPage';
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
 import {
-  LocataireDashboard,
   AdminDashboard,
   FiscalDashboard,
   PlaceholderPage,
@@ -41,6 +40,36 @@ const TenantsListPage = lazy(() =>
 );
 const TenantDetailPage = lazy(() =>
   import('@/pages/bailleur/tenants/DetailPage').then((m) => ({ default: m.TenantDetailPage })),
+);
+const LocataireDashboard = lazy(() =>
+  import('@/pages/locataire/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
+const LocataireContractsListPage = lazy(() =>
+  import('@/pages/locataire/contracts/ListPage').then((m) => ({ default: m.ContractsListPage })),
+);
+const LocataireContractDetailPage = lazy(() =>
+  import('@/pages/locataire/contracts/DetailPage').then((m) => ({ default: m.ContractDetailPage })),
+);
+const LocatairePaymentsListPage = lazy(() =>
+  import('@/pages/locataire/payments/ListPage').then((m) => ({ default: m.PaymentsListPage })),
+);
+const LocatairePaymentPage = lazy(() =>
+  import('@/pages/locataire/payments/PaymentPage').then((m) => ({ default: m.PaymentPage })),
+);
+const LocatairePaymentSuccessPage = lazy(() =>
+  import('@/pages/locataire/payments/SuccessPage').then((m) => ({ default: m.SuccessPage })),
+);
+const LocatairePaymentFailedPage = lazy(() =>
+  import('@/pages/locataire/payments/FailedPage').then((m) => ({ default: m.FailedPage })),
+);
+const LocataireReceiptsListPage = lazy(() =>
+  import('@/pages/locataire/receipts/ListPage').then((m) => ({ default: m.ReceiptsListPage })),
+);
+const LocataireReceiptDetailPage = lazy(() =>
+  import('@/pages/locataire/receipts/DetailPage').then((m) => ({ default: m.ReceiptDetailPage })),
+);
+const LocataireProfilePage = lazy(() =>
+  import('@/pages/locataire/profile/Page').then((m) => ({ default: m.ProfilePage })),
 );
 
 function PageLoader() {
@@ -152,12 +181,18 @@ export default function App() {
         {/* Locataire routes */}
         <Route element={<ProtectedRoute allowedRoles={['locataire']} />}>
           <Route element={<LocataireLayout />}>
-            <Route path={ROUTES.LOCATAIRE.HOME} element={<LocataireDashboard />} />
-            <Route path={ROUTES.LOCATAIRE.CONTRACTS} element={<PlaceholderPage title="Mes contrats" />} />
-            <Route path={ROUTES.LOCATAIRE.PAYMENTS} element={<PlaceholderPage title="Mes paiements" />} />
-            <Route path={ROUTES.LOCATAIRE.RECEIPTS} element={<PlaceholderPage title="Mes reçus" />} />
+            <Route path={ROUTES.LOCATAIRE.HOME} element={<Suspense fallback={<PageLoader />}><LocataireDashboard /></Suspense>} />
+            <Route path={ROUTES.LOCATAIRE.CONTRACTS} element={<Suspense fallback={<PageLoader />}><LocataireContractsListPage /></Suspense>} />
+            <Route path={ROUTES.LOCATAIRE.CONTRACT_DETAIL} element={<Suspense fallback={<PageLoader />}><LocataireContractDetailPage /></Suspense>} />
+            <Route path={ROUTES.LOCATAIRE.PAYMENTS} element={<Suspense fallback={<PageLoader />}><LocatairePaymentsListPage /></Suspense>} />
+            <Route path={ROUTES.LOCATAIRE.PAYMENT_NEW} element={<Suspense fallback={<PageLoader />}><LocatairePaymentPage /></Suspense>} />
+            <Route path={ROUTES.LOCATAIRE.PAYMENT_SUCCESS} element={<Suspense fallback={<PageLoader />}><LocatairePaymentSuccessPage /></Suspense>} />
+            <Route path={ROUTES.LOCATAIRE.PAYMENT_FAILED} element={<Suspense fallback={<PageLoader />}><LocatairePaymentFailedPage /></Suspense>} />
+            <Route path={ROUTES.LOCATAIRE.RECEIPTS} element={<Suspense fallback={<PageLoader />}><LocataireReceiptsListPage /></Suspense>} />
+            <Route path={ROUTES.LOCATAIRE.RECEIPT_DETAIL} element={<Suspense fallback={<PageLoader />}><LocataireReceiptDetailPage /></Suspense>} />
             <Route path={ROUTES.LOCATAIRE.NOTIFICATIONS} element={<PlaceholderPage title="Notifications" />} />
-            <Route path={ROUTES.LOCATAIRE.PROFILE} element={<PlaceholderPage title="Profil" />} />
+            <Route path={ROUTES.LOCATAIRE.PROFILE} element={<Suspense fallback={<PageLoader />}><LocataireProfilePage /></Suspense>} />
+            <Route path="/locataire/accueil" element={<Navigate to={ROUTES.LOCATAIRE.HOME} replace />} />
             <Route path={ROUTES.LOCATAIRE.ROOT} element={<Navigate to={ROUTES.LOCATAIRE.HOME} replace />} />
           </Route>
         </Route>
