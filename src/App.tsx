@@ -42,6 +42,15 @@ const TenantsListPage = lazy(() =>
 const TenantDetailPage = lazy(() =>
   import('@/pages/bailleur/tenants/DetailPage').then((m) => ({ default: m.TenantDetailPage })),
 );
+const ContractsListPage = lazy(() =>
+  import('@/pages/bailleur/contracts/ListPage').then((m) => ({ default: m.ContractsListPage })),
+);
+const CreateContractPage = lazy(() =>
+  import('@/pages/bailleur/contracts/CreatePage').then((m) => ({ default: m.CreateContractPage })),
+);
+const ContractDetailPage = lazy(() =>
+  import('@/pages/bailleur/contracts/DetailPage').then((m) => ({ default: m.ContractDetailPage })),
+);
 
 function PageLoader() {
   return (
@@ -139,7 +148,22 @@ export default function App() {
               path={ROUTES.BAILLEUR.TENANT_DETAIL}
               element={<Suspense fallback={<PageLoader />}><TenantDetailPage /></Suspense>}
             />
-            <Route path={ROUTES.BAILLEUR.CONTRACTS} element={<PlaceholderPage title="Contrats" />} />
+            <Route
+              path={ROUTES.BAILLEUR.CONTRACTS}
+              element={<Suspense fallback={<PageLoader />}><ContractsListPage /></Suspense>}
+            />
+            <Route
+              path={ROUTES.BAILLEUR.CONTRACT_NEW}
+              element={<Suspense fallback={<PageLoader />}><CreateContractPage /></Suspense>}
+            />
+            <Route
+              path={ROUTES.BAILLEUR.CONTRACT_EDIT}
+              element={<Suspense fallback={<PageLoader />}><CreateContractPage /></Suspense>}
+            />
+            <Route
+              path={ROUTES.BAILLEUR.CONTRACT_DETAIL}
+              element={<Suspense fallback={<PageLoader />}><ContractDetailPage /></Suspense>}
+            />
             <Route path={ROUTES.BAILLEUR.PAYMENTS} element={<PlaceholderPage title="Paiements" />} />
             <Route path={ROUTES.BAILLEUR.RECEIPTS} element={<PlaceholderPage title="Reçus" />} />
             <Route path={ROUTES.BAILLEUR.TAXES} element={<PlaceholderPage title="Fiscalité" />} />
