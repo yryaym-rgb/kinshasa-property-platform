@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
@@ -9,12 +10,12 @@ import {
 } from '@/components/layouts/DashboardLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { NotFound } from '@/components/common/NotFound';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
 import { VerifyOTPPage } from '@/pages/auth/VerifyOTPPage';
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
 import {
-  BailleurDashboard,
   LocataireDashboard,
   AdminDashboard,
   FiscalDashboard,
@@ -22,6 +23,33 @@ import {
 } from '@/pages/dashboard/PlaceholderPages';
 import { ROUTES } from '@/config/routes';
 import { APP_CONFIG } from '@/config/app.config';
+
+const BailleurDashboard = lazy(() =>
+  import('@/pages/bailleur/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
+const PropertiesListPage = lazy(() =>
+  import('@/pages/bailleur/properties/ListPage').then((m) => ({ default: m.PropertiesListPage })),
+);
+const PropertyDetailPage = lazy(() =>
+  import('@/pages/bailleur/properties/DetailPage').then((m) => ({ default: m.PropertyDetailPage })),
+);
+const PropertyFormPage = lazy(() =>
+  import('@/pages/bailleur/properties/FormPage').then((m) => ({ default: m.PropertyFormPage })),
+);
+const TenantsListPage = lazy(() =>
+  import('@/pages/bailleur/tenants/ListPage').then((m) => ({ default: m.TenantsListPage })),
+);
+const TenantDetailPage = lazy(() =>
+  import('@/pages/bailleur/tenants/DetailPage').then((m) => ({ default: m.TenantDetailPage })),
+);
+
+function PageLoader() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <LoadingSpinner size="lg" />
+    </div>
+  );
+}
 
 function UnauthorizedPage() {
   return (
@@ -83,9 +111,34 @@ export default function App() {
         {/* Bailleur routes */}
         <Route element={<ProtectedRoute allowedRoles={['bailleur', 'gestionnaire', 'agence']} />}>
           <Route element={<BailleurLayout />}>
-            <Route path={ROUTES.BAILLEUR.DASHBOARD} element={<BailleurDashboard />} />
-            <Route path={ROUTES.BAILLEUR.PROPERTIES} element={<PlaceholderPage title="Mes biens" />} />
-            <Route path={ROUTES.BAILLEUR.TENANTS} element={<PlaceholderPage title="Locataires" />} />
+            <Route
+              path={ROUTES.BAILLEUR.DASHBOARD}
+              element={<Suspense fallback={<PageLoader />}><BailleurDashboard /></Suspense>}
+            />
+            <Route
+              path={ROUTES.BAILLEUR.PROPERTIES}
+              element={<Suspense fallback={<PageLoader />}><PropertiesListPage /></Suspense>}
+            />
+            <Route
+              path={ROUTES.BAILLEUR.PROPERTY_NEW}
+              element={<Suspense fallback={<PageLoader />}><PropertyFormPage /></Suspense>}
+            />
+            <Route
+              path={ROUTES.BAILLEUR.PROPERTY_EDIT}
+              element={<Suspense fallback={<PageLoader />}><PropertyFormPage /></Suspense>}
+            />
+            <Route
+              path={ROUTES.BAILLEUR.PROPERTY_DETAIL}
+              element={<Suspense fallback={<PageLoader />}><PropertyDetailPage /></Suspense>}
+            />
+            <Route
+              path={ROUTES.BAILLEUR.TENANTS}
+              element={<Suspense fallback={<PageLoader />}><TenantsListPage /></Suspense>}
+            />
+            <Route
+              path={ROUTES.BAILLEUR.TENANT_DETAIL}
+              element={<Suspense fallback={<PageLoader />}><TenantDetailPage /></Suspense>}
+            />
             <Route path={ROUTES.BAILLEUR.CONTRACTS} element={<PlaceholderPage title="Contrats" />} />
             <Route path={ROUTES.BAILLEUR.PAYMENTS} element={<PlaceholderPage title="Paiements" />} />
             <Route path={ROUTES.BAILLEUR.RECEIPTS} element={<PlaceholderPage title="Reçus" />} />
