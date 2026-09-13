@@ -89,7 +89,11 @@ export async function fetchUserProfile(userId: string) {
     .single();
 
   if (error) throw translateError(error);
-  return data;
+  const { bailleurs, ...user } = data;
+  return {
+    ...user,
+    bailleur: Array.isArray(bailleurs) ? bailleurs[0] ?? null : bailleurs ?? null,
+  };
 }
 
 export async function logout(): Promise<void> {

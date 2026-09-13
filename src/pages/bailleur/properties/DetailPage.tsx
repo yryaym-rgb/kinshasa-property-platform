@@ -163,7 +163,7 @@ export function PropertyDetailPage() {
               <DropdownMenu.Item className="cursor-pointer rounded px-3 py-2 text-sm hover:bg-[var(--color-muted)]" onSelect={() => navigate(ROUTES.BAILLEUR.PROPERTY_EDIT.replace(':id', property.id))}>
                 Modifier
               </DropdownMenu.Item>
-              <DropdownMenu.Item className="cursor-pointer rounded px-3 py-2 text-sm hover:bg-[var(--color-muted)]" onSelect={() => navigate(ROUTES.BAILLEUR.CONTRACTS)}>
+              <DropdownMenu.Item className="cursor-pointer rounded px-3 py-2 text-sm hover:bg-[var(--color-muted)]" onSelect={() => navigate(`${ROUTES.BAILLEUR.CONTRACT_NEW}?logementId=${property.id}`)}>
                 Créer un contrat
               </DropdownMenu.Item>
               <DropdownMenu.Item className="cursor-pointer rounded px-3 py-2 text-sm hover:bg-[var(--color-muted)]" onSelect={() => archiveMutation.mutate(property.id)}>
@@ -285,7 +285,7 @@ export function PropertyDetailPage() {
 
             <Tabs.Content value="contrats" className="mt-6">
               <div className="mb-4 flex justify-end">
-                <Button size="sm" onClick={() => navigate(ROUTES.BAILLEUR.CONTRACTS)}>
+                <Button size="sm" onClick={() => navigate(`${ROUTES.BAILLEUR.CONTRACT_NEW}?logementId=${property.id}`)}>
                   Créer un contrat
                 </Button>
               </div>
