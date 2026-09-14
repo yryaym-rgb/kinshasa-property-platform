@@ -23,6 +23,10 @@ import {
 import { ROUTES } from '@/config/routes';
 import { APP_CONFIG } from '@/config/app.config';
 
+const LandingPage = lazy(() =>
+  import('@/pages/public/LandingPage').then((m) => ({ default: m.LandingPage })),
+);
+
 const BailleurDashboard = lazy(() =>
   import('@/pages/bailleur/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 );
@@ -102,31 +106,6 @@ function UnauthorizedPage() {
   );
 }
 
-function HomePage() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-[var(--color-kinshasa-blue)] to-[var(--color-kinshasa-blue-dark)] px-4 text-white">
-      <div className="max-w-2xl text-center">
-        <h1 className="font-heading text-4xl font-bold sm:text-5xl">{APP_CONFIG.name}</h1>
-        <p className="mt-4 text-lg text-blue-100">{APP_CONFIG.tagline}</p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <a
-            href={ROUTES.LOGIN}
-            className="rounded-lg bg-[var(--color-kinshasa-gold)] px-6 py-3 font-medium text-[var(--color-kinshasa-blue-dark)] hover:opacity-90"
-          >
-            Se connecter
-          </a>
-          <a
-            href={ROUTES.REGISTER}
-            className="rounded-lg border border-white/30 px-6 py-3 font-medium hover:bg-white/10"
-          >
-            S&apos;inscrire
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <>
@@ -137,7 +116,14 @@ export default function App() {
 
       <Routes>
         {/* Public routes */}
-        <Route path={ROUTES.HOME} element={<HomePage />} />
+        <Route
+          path={ROUTES.HOME}
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <LandingPage />
+            </Suspense>
+          }
+        />
         <Route element={<AuthLayout />}>
           <Route path={ROUTES.LOGIN} element={<LoginPage />} />
           <Route path={ROUTES.REGISTER} element={<RegisterPage />} />

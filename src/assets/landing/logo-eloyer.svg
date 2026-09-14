@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" fill="none" role="img" aria-label="Logo eLoyer">
+  <rect width="56" height="56" rx="10" fill="#0f172a"/>
+  <path d="M28 14 L38 26 L33 26 L33 38 L23 38 L23 26 L18 26 Z" fill="#d4a843"/>
+  <rect x="23" y="30" width="10" height="4" rx="1" fill="#d4a843"/>
+</svg>
