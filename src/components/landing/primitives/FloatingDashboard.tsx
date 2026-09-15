@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { animated, to, useSpring } from '@react-spring/web';
-import { useReducedMotion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { motion, useMotionTemplate, useReducedMotion, useSpring } from 'framer-motion';
+import { cn } from '@/lib/cn';
 import { ChartIcon, HomeIcon, LockIcon, QrReceiptIcon, UserIcon, FileTextIcon, CreditCardIcon } from '../icons';
 
 const DESIGN_WIDTH = 640;
@@ -63,28 +62,26 @@ export function FloatingDashboard({ className, flat = false }: FloatingDashboard
   const reduce = useReducedMotion();
   const tiltEnabled = !flat && !reduce;
 
-  const [{ rx, ry }, api] = useSpring(() => ({
-    rx: 4,
-    ry: -8,
-    config: { mass: 1, tension: 170, friction: 26 },
-  }));
+  // Physics-based tilt that follows the cursor and settles back to its resting pose.
+  const spring = { stiffness: 170, damping: 26, mass: 1 };
+  const rx = useSpring(4, spring);
+  const ry = useSpring(-8, spring);
+  const tilt = useMotionTemplate`rotateX(${rx}deg) rotateY(${ry}deg)`;
 
   const onMove = (e: PointerEvent<HTMLDivElement>) => {
     if (!tiltEnabled || e.pointerType !== 'mouse') return;
     const rect = e.currentTarget.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width - 0.5;
     const py = (e.clientY - rect.top) / rect.height - 0.5;
-    api.start({ rx: 4 - py * 8, ry: -8 + px * 10 });
+    rx.set(4 - py * 8);
+    ry.set(-8 + px * 10);
   };
 
   const onLeave = () => {
     if (!tiltEnabled) return;
-    api.start({ rx: 4, ry: -8 });
+    rx.set(4);
+    ry.set(-8);
   };
-
-  const tiltStyle = tiltEnabled
-    ? { transform: to([rx, ry], (x, y) => `rotateX(${x}deg) rotateY(${y}deg)`) }
-    : { transform: 'none' };
 
   return (
     <div
@@ -101,13 +98,13 @@ export function FloatingDashboard({ className, flat = false }: FloatingDashboard
         style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT, transform: `scale(${scale})`, transformOrigin: 'top left' }}
       >
         <div className={cn(!reduce && 'lp-dash-float')} onPointerMove={onMove} onPointerLeave={onLeave}>
-          <animated.div style={tiltStyle as CSSProperties} className="lp-dash-frame">
+          <motion.div style={{ transform: tiltEnabled ? tilt : 'none' }} className="lp-dash-frame">
             <BrowserChrome />
             <div className="flex" style={{ height: DESIGN_HEIGHT - 36 }}>
               <Sidebar />
               <Main />
             </div>
-          </animated.div>
+          </motion.div>
         </div>
       </div>
     </div>

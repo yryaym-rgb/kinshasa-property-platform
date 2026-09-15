@@ -1,6 +1,6 @@
 import { useInView } from 'react-intersection-observer';
 import { useCountUp, formatCountUp } from '@/hooks/useCountUp';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 
 interface AnimatedNumberProps {
   value: number;

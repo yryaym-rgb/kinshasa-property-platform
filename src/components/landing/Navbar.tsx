@@ -1,9 +1,8 @@
-import { useEffect, useState, type MouseEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'framer-motion';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ROUTES } from '@/config/routes';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 import { useActiveSection } from '@/hooks/useActiveSection';
 import { KinshasaLogo, KinshasaSeal } from './primitives/KinshasaLogo';
 import { FlagBar } from './primitives/FlagBar';
@@ -178,6 +177,11 @@ export function Navbar() {
 
 /* ── Language selector ─────────────────────────────────────────── */
 
+/**
+ * A dependency-free WAI-ARIA menu button (roving focus, arrow/Home/End keys,
+ * Escape and outside-click dismissal). Keeps Headless UI out of the landing
+ * page's critical bundle.
+ */
 function LanguageMenu({
   current,
   onChange,
@@ -185,39 +189,139 @@ function LanguageMenu({
   current: (typeof LANGUAGES)[number];
   onChange: (code: LanguageCode) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const [focusIndex, setFocusIndex] = useState(0);
+  const reduce = useReducedMotion();
+  const menuId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const openMenu = () => {
+    setFocusIndex(Math.max(0, LANGUAGES.findIndex((l) => l.code === current.code)));
+    setOpen(true);
+  };
+  const closeMenu = (restoreFocus = true) => {
+    setOpen(false);
+    if (restoreFocus) buttonRef.current?.focus();
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    itemRefs.current[focusIndex]?.focus();
+  }, [open, focusIndex]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [open]);
+
+  const onMenuKeyDown = (e: ReactKeyboardEvent<HTMLUListElement>) => {
+    const last = LANGUAGES.length - 1;
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusIndex((i) => (i >= last ? 0 : i + 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusIndex((i) => (i <= 0 ? last : i - 1));
+        break;
+      case 'Home':
+        e.preventDefault();
+        setFocusIndex(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        setFocusIndex(last);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        closeMenu();
+        break;
+      case 'Tab':
+        closeMenu(false);
+        break;
+    }
+  };
+
+  const onButtonKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      openMenu();
+      if (e.key === 'ArrowUp') setFocusIndex(LANGUAGES.length - 1);
+    }
+  };
+
   return (
-    <Menu as="div" className="relative">
-      <MenuButton
-        className="group flex items-center gap-2 rounded-md px-1 py-1 text-[14px] font-semibold text-drc-charcoal transition-colors hover:text-drc-blue-ink data-[open]:text-drc-blue-ink"
+    <div ref={rootRef} className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => (open ? closeMenu() : openMenu())}
+        onKeyDown={onButtonKeyDown}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={menuId}
+        className={cn(
+          'group flex items-center gap-2 rounded-md px-1 py-1 text-[14px] font-semibold text-drc-charcoal transition-colors hover:text-drc-blue-ink',
+          open && 'text-drc-blue-ink',
+        )}
       >
         <DRCFlag width={20} title="Langue" />
         <span>
           {current.short}
           <span className="sr-only"> — {current.label}</span>
         </span>
-        <ChevronDownIcon size={14} className="transition-transform duration-300 group-data-[open]:rotate-180" />
-      </MenuButton>
-      <MenuItems
-        transition
-        className="absolute right-0 top-full z-50 mt-3 w-48 origin-top-right overflow-hidden rounded-xl border border-drc-gray-200 bg-white p-1.5 shadow-[0_20px_50px_rgba(10,22,40,0.14)] outline-none transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
-      >
-        {LANGUAGES.map((lang) => (
-          <MenuItem key={lang.code}>
-            <button
-              type="button"
-              onClick={() => onChange(lang.code)}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-[14px] text-drc-charcoal data-[focus]:bg-drc-gray-100 data-[focus]:text-drc-blue-ink"
-            >
-              <span className="flex items-center gap-3">
-                <span className="lp-mono text-[11px] font-semibold text-drc-gray-500">{lang.short}</span>
-                {lang.label}
-              </span>
-              {lang.code === current.code ? <CheckIcon size={16} className="text-drc-blue-ink" /> : null}
-            </button>
-          </MenuItem>
-        ))}
-      </MenuItems>
-    </Menu>
+        <ChevronDownIcon size={14} className={cn('transition-transform duration-300', open && 'rotate-180')} />
+      </button>
+
+      <AnimatePresence>
+        {open ? (
+          <motion.ul
+            id={menuId}
+            role="menu"
+            aria-label="Choisir la langue"
+            onKeyDown={onMenuKeyDown}
+            initial={reduce ? false : { opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={reduce ? undefined : { opacity: 0, scale: 0.95, y: -4 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute right-0 top-full z-50 mt-3 w-48 origin-top-right overflow-hidden rounded-xl border border-drc-gray-200 bg-white p-1.5 shadow-[0_20px_50px_rgba(10,22,40,0.14)]"
+          >
+            {LANGUAGES.map((lang, i) => (
+              <li key={lang.code} role="none">
+                <button
+                  ref={(el) => {
+                    itemRefs.current[i] = el;
+                  }}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={lang.code === current.code}
+                  tabIndex={i === focusIndex ? 0 : -1}
+                  onMouseEnter={() => setFocusIndex(i)}
+                  onClick={() => {
+                    onChange(lang.code);
+                    closeMenu();
+                  }}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-[14px] text-drc-charcoal outline-none transition-colors hover:bg-drc-gray-100 hover:text-drc-blue-ink focus-visible:bg-drc-gray-100 focus-visible:text-drc-blue-ink"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="lp-mono text-[11px] font-semibold text-drc-gray-500">{lang.short}</span>
+                    {lang.label}
+                  </span>
+                  {lang.code === current.code ? <CheckIcon size={16} className="text-drc-blue-ink" /> : null}
+                </button>
+              </li>
+            ))}
+          </motion.ul>
+        ) : null}
+      </AnimatePresence>
+    </div>
   );
 }
 

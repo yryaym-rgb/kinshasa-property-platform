@@ -6,12 +6,10 @@ import { NotFound } from "@/components/common/NotFound";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ROUTES } from "@/config/routes";
 import { APP_CONFIG } from "@/config/app.config";
-
-const LandingPage = lazy(() =>
-  import("@/pages/public/LandingPage").then((m) => ({
-    default: m.LandingPage,
-  })),
-);
+// The landing page is the primary entry point, so it ships in the initial
+// bundle: its chunks get <link rel="modulepreload"> in index.html instead of
+// being discovered only after React renders the router.
+import { LandingPage } from "@/pages/public/LandingPage";
 
 // Auth surface and dashboard shells are code-split so the public landing page
 // only ships what it renders.

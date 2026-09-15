@@ -3,11 +3,9 @@ import { Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/hooks/useAuth';
 import { getDashboardPathForRole } from '@/config/routes';
-import { FullPageLoading } from '@/components/ui/LoadingSpinner';
 import { Navbar } from '@/components/landing/Navbar';
 import { Hero } from '@/components/landing/Hero';
 import { StatsBar } from '@/components/landing/StatsBar';
-import heroWebp from '@/assets/landing/hero-kinshasa.webp';
 
 const SolutionsGrid = lazy(() =>
   import('@/components/landing/SolutionsGrid').then((m) => ({ default: m.SolutionsGrid })),
@@ -30,12 +28,10 @@ function SectionFallback({ height, dark = false }: { height: number; dark?: bool
 }
 
 export function LandingPage() {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  if (loading) {
-    return <FullPageLoading />;
-  }
-
+  // The public page paints immediately; we never block first paint on the
+  // session check. Signed-in visitors are redirected as soon as it resolves.
   if (isAuthenticated && user) {
     return <Navigate to={getDashboardPathForRole(user.role)} replace />;
   }
@@ -54,12 +50,13 @@ export function LandingPage() {
           property="og:description"
           content="La plateforme officielle de gestion locative et fiscale de la Ville de Kinshasa."
         />
-        <meta property="og:image" content="/og-image.jpg" />
+        <meta property="og:image" content="https://eloyer-kinshasa.cd/og-image.jpg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="theme-color" content="#0A1628" />
         <link rel="canonical" href="https://eloyer-kinshasa.cd" />
-        <link rel="preload" as="image" href={heroWebp} type="image/webp" fetchPriority="high" />
       </Helmet>
 
       <div className="lp">

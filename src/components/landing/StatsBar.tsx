@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import { AnimatedNumber } from './primitives/AnimatedNumber';
 import { Reveal } from './primitives/Reveal';
 import { BuildingIcon, ChartIcon, FingerprintIcon, SparkIcon, type IconProps } from './icons';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 
 interface Stat {
   value: number;

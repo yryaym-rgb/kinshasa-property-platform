@@ -1,8 +1,7 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 
-import logoKinshasa from '@/assets/landing/logo-kinshasa.png';
-
-export const KINSHASA_LOGO_SRC = logoKinshasa;
+// Stable public URL so the static app shell in index.html can reference the same file.
+export const KINSHASA_LOGO_SRC = '/landing/logo-kinshasa.png';
 
 interface KinshasaSealProps {
   size?: number;

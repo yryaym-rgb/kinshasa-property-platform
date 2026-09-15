@@ -1,5 +1,5 @@
 import type { ComponentType, CSSProperties } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { SectionHeading } from './primitives/SectionHeading';
 import { Reveal, Stagger, StaggerItem } from './primitives/Reveal';

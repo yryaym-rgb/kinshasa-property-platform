@@ -61,10 +61,6 @@
   outline-color: var(--drc-yellow);
 }
 
-.lp [role='menu']:focus-visible {
-  outline: none;
-}
-
 .lp-container {
   width: 100%;
   max-width: 1280px;
@@ -455,6 +451,20 @@
   position: absolute;
   inset: 0;
   z-index: -3;
+}
+
+/*
+ * Below the desktop breakpoint the hero grows with its stacked content, so the
+ * photograph is pinned to the first viewport (identical box in the static shell
+ * and the React render — no crop jump on hand-off) and dissolves into navy.
+ */
+@media (max-width: 1023px) {
+  .lp-hero__bg {
+    inset: 0 0 auto 0;
+    height: max(calc(100svh - var(--lp-nav-height) - 3px), 700px);
+    mask-image: linear-gradient(to bottom, #000 58%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent 100%);
+  }
 }
 
 .lp-hero__bg img {

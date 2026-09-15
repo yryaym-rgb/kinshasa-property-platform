@@ -1,13 +1,9 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { APP_CONFIG } from '@/config/app.config';
 import type { KinshasaCommune } from '@/types';
 
-export function cn(...inputs: ClassValue[]): string {
-  return twMerge(clsx(inputs));
-}
+export { cn } from './cn';
 
 /** Format amount in CDF (Franc congolais) */
 export function formatCDF(amount: number): string {

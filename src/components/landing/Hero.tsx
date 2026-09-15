@@ -2,9 +2,6 @@ import { Link } from 'react-router-dom';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
 import { ROUTES } from '@/config/routes';
 import { BREAKPOINTS, useMediaQuery } from '@/hooks/useMediaQuery';
-import heroWebp from '@/assets/landing/hero-kinshasa.webp';
-import heroWebpSm from '@/assets/landing/hero-kinshasa-1024.webp';
-import heroJpg from '@/assets/landing/hero-kinshasa.jpg';
 import { FloatingDashboard } from './primitives/FloatingDashboard';
 import { KinshasaSeal } from './primitives/KinshasaLogo';
 import { LP_EASE } from './primitives/motion';
@@ -18,6 +15,15 @@ import {
   PlayIcon,
   QrReceiptIcon,
 } from './icons';
+
+// Served from /public with stable URLs so index.html can preload the LCP image
+// before any JavaScript executes (see the inline script in index.html).
+const HERO_IMAGE = {
+  webp: '/landing/hero-kinshasa.webp',
+  webpMd: '/landing/hero-kinshasa-1024.webp',
+  webpSm: '/landing/hero-kinshasa-750.webp',
+  jpg: '/landing/hero-kinshasa.jpg',
+} as const;
 
 const FEATURES = [
   { Icon: HomeIcon, label: 'Gestion des logements' },
@@ -43,8 +49,12 @@ export function Hero() {
     <section id="accueil" className="lp-hero lp-section-anchor" aria-labelledby="hero-title">
       <div className="lp-hero__bg" aria-hidden="true">
         <picture>
-          <source srcSet={`${heroWebpSm} 1024w, ${heroWebp} 1600w`} sizes="100vw" type="image/webp" />
-          <img src={heroJpg} alt="" width={1600} height={1067} fetchPriority="high" decoding="async" />
+          <source
+            srcSet={`${HERO_IMAGE.webpSm} 750w, ${HERO_IMAGE.webpMd} 1024w, ${HERO_IMAGE.webp} 1600w`}
+            sizes="100vw"
+            type="image/webp"
+          />
+          <img src={HERO_IMAGE.jpg} alt="" width={1600} height={1067} fetchPriority="high" decoding="async" />
         </picture>
       </div>
       <div className="lp-hero__overlay" aria-hidden="true" />

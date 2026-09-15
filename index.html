@@ -8,14 +8,125 @@
     <meta name="theme-color" content="#0A1628" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonts load off the critical path; font-display: swap keeps text visible meanwhile. -->
     <link
-      rel="stylesheet"
+      rel="preload"
+      as="style"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Caveat:wght@700&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Caveat:wght@700&display=swap"
+      />
+    </noscript>
+    <!--
+      Critical CSS for the static landing shell below (#lp-shell). Self-contained so the
+      shell paints from the HTML alone; the bundled stylesheet is loaded without blocking
+      rendering (see the stylesheet transform in vite.config.ts) and React boots only once
+      it has arrived.
+    -->
+    <style>
+      body{margin:0}
+      #lp-shell{--sh-navy:#0a1628;--sh-nav:80px;background:#fff;font-family:Inter,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+      #lp-shell .sh-nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.86);border-bottom:1px solid #e5e9f0}
+      #lp-shell .sh-wrap{box-sizing:border-box;display:flex;align-items:center;height:var(--sh-nav);width:100%;max-width:1280px;margin-inline:auto;padding-inline:24px}
+      #lp-shell .sh-id{display:flex;align-items:center;gap:12px}
+      #lp-shell .sh-id img{display:block;width:40px;height:40px}
+      #lp-shell .sh-sep,#lp-shell .sh-cap{display:none}
+      #lp-shell .sh-word{display:flex;flex-direction:column;line-height:1;font-family:Poppins,ui-sans-serif,system-ui,sans-serif;font-weight:700;letter-spacing:-.02em;font-size:18px}
+      #lp-shell .sh-word b{font-weight:inherit;color:#0077b6}
+      #lp-shell .sh-word i{font-style:normal;color:var(--sh-navy)}
+      #lp-shell .sh-flag{display:block;height:3px;width:100%;background:linear-gradient(90deg,#009fe3 0 33.333%,#ffdd00 33.333% 66.666%,#ef3e42 66.666% 100%)}
+      #lp-shell .sh-hero{position:relative;min-height:max(calc(100svh - var(--sh-nav) - 3px),700px);background:var(--sh-navy);isolation:isolate;overflow:hidden}
+      #lp-shell .sh-bg{position:absolute;inset:0;z-index:-3}
+      #lp-shell .sh-bg img{width:100%;height:100%;object-fit:cover;object-position:62% 40%;transform:scale(1.04)}
+      #lp-shell .sh-overlay{position:absolute;inset:0;z-index:-2;background:linear-gradient(135deg,rgba(10,22,40,.95) 0%,rgba(10,22,40,.75) 50%,rgba(0,159,227,.3) 100%)}
+      #lp-shell .sh-glow{position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse 50% 45% at 78% 42%,rgba(0,159,227,.28),transparent 70%),radial-gradient(ellipse 30% 30% at 88% 70%,rgba(255,221,0,.14),transparent 70%)}
+      @media (min-width:640px){
+        #lp-shell .sh-id{gap:16px}
+        #lp-shell .sh-id img{width:48px;height:48px}
+        #lp-shell .sh-sep{display:block;height:36px;width:1px;background:#e5e9f0}
+        #lp-shell .sh-word{font-size:22px}
+        #lp-shell .sh-word b{color:#0086c2}
+        #lp-shell .sh-cap{display:block;margin-top:5px;font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#5b6b80}
+      }
+      @media (min-width:768px){#lp-shell .sh-wrap{padding-inline:40px}}
+      @media (max-width:1023px){
+        #lp-shell .sh-bg{inset:0 0 auto 0;height:max(calc(100svh - var(--sh-nav) - 3px),700px);mask-image:linear-gradient(to bottom,#000 58%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 58%,transparent 100%)}
+      }
+    </style>
+    <!-- Kick off the landing hero (LCP) image before any JavaScript runs; only on "/". -->
+    <script>
+      if (location.pathname === '/') {
+        var heroPreload = document.createElement('link');
+        heroPreload.rel = 'preload';
+        heroPreload.as = 'image';
+        heroPreload.type = 'image/webp';
+        heroPreload.setAttribute(
+          'imagesrcset',
+          '/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w'
+        );
+        heroPreload.setAttribute('imagesizes', '100vw');
+        heroPreload.setAttribute('fetchpriority', 'high');
+        document.head.appendChild(heroPreload);
+      }
+    </script>
     <title>eLoyer Kinshasa</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!--
+        Static app shell for "/": paints the branded frame (navbar identity + hero
+        backdrop) straight from the HTML, long before JavaScript. React replaces the
+        whole subtree atomically on its first commit, so there is no flash and no
+        layout shift. Geometry mirrors Navbar/Hero exactly.
+      -->
+      <div id="lp-shell" aria-hidden="true">
+        <header class="sh-nav">
+          <div class="sh-wrap">
+            <span class="sh-id">
+              <img src="/landing/logo-kinshasa.png" alt="" width="48" height="48" />
+              <span class="sh-sep"></span>
+              <span class="sh-word">
+                <span><b>eLoyer</b> <i>Kinshasa</i></span>
+                <span class="sh-cap">Ville de Kinshasa</span>
+              </span>
+            </span>
+          </div>
+          <span class="sh-flag"></span>
+        </header>
+        <section class="sh-hero">
+          <div class="sh-bg">
+            <picture>
+              <source
+                srcset="/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w"
+                sizes="100vw"
+                type="image/webp"
+              />
+              <img
+                src="/landing/hero-kinshasa.jpg"
+                alt=""
+                width="1600"
+                height="1067"
+                fetchpriority="high"
+                decoding="sync"
+                elementtiming="lp-shell-hero"
+              />
+            </picture>
+          </div>
+          <div class="sh-overlay"></div>
+          <div class="sh-glow"></div>
+        </section>
+      </div>
+    </div>
+    <script>
+      if (location.pathname !== '/') {
+        var shell = document.getElementById('lp-shell');
+        if (shell) shell.remove();
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
