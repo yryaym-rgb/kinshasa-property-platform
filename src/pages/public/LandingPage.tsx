@@ -1,19 +1,33 @@
+import { lazy, Suspense } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/hooks/useAuth';
 import { getDashboardPathForRole } from '@/config/routes';
 import { FullPageLoading } from '@/components/ui/LoadingSpinner';
-import { Navbar } from '@/components/public/Navbar';
-import { HeroSection } from '@/components/public/HeroSection';
-import { SolutionsSection } from '@/components/public/SolutionsSection';
-import { StatsSection } from '@/components/public/StatsSection';
-import { TrustSection } from '@/components/public/TrustSection';
-import { FeaturesSection } from '@/components/public/FeaturesSection';
-import { CTASection } from '@/components/public/CTASection';
-import { Footer } from '@/components/public/Footer';
+import { Navbar } from '@/components/landing/Navbar';
+import { Hero } from '@/components/landing/Hero';
+import { StatsBar } from '@/components/landing/StatsBar';
+import heroWebp from '@/assets/landing/hero-kinshasa.webp';
 
-const HERO_IMAGE =
-  'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1920&q=80';
+const SolutionsGrid = lazy(() =>
+  import('@/components/landing/SolutionsGrid').then((m) => ({ default: m.SolutionsGrid })),
+);
+const ProcessTimeline = lazy(() =>
+  import('@/components/landing/ProcessTimeline').then((m) => ({ default: m.ProcessTimeline })),
+);
+const BenefitsSection = lazy(() =>
+  import('@/components/landing/BenefitsSection').then((m) => ({ default: m.BenefitsSection })),
+);
+const TestimonialsSection = lazy(() =>
+  import('@/components/landing/TestimonialsSection').then((m) => ({ default: m.TestimonialsSection })),
+);
+const CTASection = lazy(() => import('@/components/landing/CTASection').then((m) => ({ default: m.CTASection })));
+const Footer = lazy(() => import('@/components/landing/Footer').then((m) => ({ default: m.Footer })));
+
+/** Reserves vertical space while a below-the-fold section streams in, keeping CLS near zero. */
+function SectionFallback({ height, dark = false }: { height: number; dark?: boolean }) {
+  return <div aria-hidden="true" style={{ minHeight: height }} className={dark ? 'bg-drc-navy' : 'bg-white'} />;
+}
 
 export function LandingPage() {
   const { isAuthenticated, user, loading } = useAuth();
@@ -29,37 +43,49 @@ export function LandingPage() {
   return (
     <>
       <Helmet>
-        <title>
-          eLoyer Kinshasa — La plateforme numérique intégrée pour la gestion locative
-        </title>
+        <html lang="fr" />
+        <title>eLoyer Kinshasa — La plateforme officielle de gestion locative</title>
         <meta
           name="description"
-          content="eLoyer Kinshasa connecte bailleurs, locataires, agences et administration fiscale dans un écosystème unique. Payez votre loyer, gérez vos biens, suivez vos recettes fiscales."
+          content="eLoyer Kinshasa connecte bailleurs, locataires, agences et administration fiscale. Payez votre loyer, gérez vos biens, mobilisez les recettes fiscales."
         />
         <meta property="og:title" content="eLoyer Kinshasa" />
         <meta
           property="og:description"
-          content="La plateforme numérique intégrée pour une gestion locative, un paiement sécurisé et une fiscalité maîtrisée."
+          content="La plateforme officielle de gestion locative et fiscale de la Ville de Kinshasa."
         />
         <meta property="og:image" content="/og-image.jpg" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="theme-color" content="#0A1628" />
         <link rel="canonical" href="https://eloyer-kinshasa.cd" />
-        <html lang="fr" />
-        <link rel="preload" as="image" href={HERO_IMAGE} />
+        <link rel="preload" as="image" href={heroWebp} type="image/webp" fetchPriority="high" />
       </Helmet>
 
-      <div className="min-h-screen bg-white">
+      <div className="lp">
         <Navbar />
-        <main id="main-content">
-          <HeroSection />
-          <SolutionsSection />
-          <StatsSection />
-          <TrustSection />
-          <FeaturesSection />
-          <CTASection />
+        <main id="main-content" tabIndex={-1}>
+          <Hero />
+          <StatsBar />
+          <Suspense fallback={<SectionFallback height={900} />}>
+            <SolutionsGrid />
+          </Suspense>
+          <Suspense fallback={<SectionFallback height={700} />}>
+            <ProcessTimeline />
+          </Suspense>
+          <Suspense fallback={<SectionFallback height={800} />}>
+            <BenefitsSection />
+          </Suspense>
+          <Suspense fallback={<SectionFallback height={640} dark />}>
+            <TestimonialsSection />
+          </Suspense>
+          <Suspense fallback={<SectionFallback height={480} />}>
+            <CTASection />
+          </Suspense>
         </main>
-        <Footer />
+        <Suspense fallback={<SectionFallback height={520} dark />}>
+          <Footer />
+        </Suspense>
       </div>
     </>
   );
