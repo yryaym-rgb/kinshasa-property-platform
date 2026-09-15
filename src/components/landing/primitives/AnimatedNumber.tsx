@@ -30,7 +30,8 @@ export function AnimatedNumber({
   const finalText = `${prefix}${formatCountUp(value, decimals)}${suffix}`;
 
   return (
-    <span ref={ref} className={cn('lp-tabular inline-block', className)} aria-label={label ?? finalText}>
+    <span ref={ref} className={cn('lp-tabular inline-block', className)}>
+      <span className="sr-only">{label ?? finalText}</span>
       <span aria-hidden="true">
         {prefix}
         {formatCountUp(current, decimals)}

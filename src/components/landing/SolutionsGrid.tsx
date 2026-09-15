@@ -97,7 +97,7 @@ export function SolutionsGrid() {
                   <span className={`flex h-[72px] w-[72px] items-center justify-center rounded-full ${solution.circleClass}`}>
                     <solution.Icon size={36} className={solution.iconClass} />
                   </span>
-                  <span className="lp-mono text-[12px] font-semibold text-drc-gray-400">0{index + 1}</span>
+                  <span className="lp-mono text-[12px] font-semibold text-drc-gray-500">0{index + 1}</span>
                 </div>
 
                 <h3 className="mt-7 font-heading text-[22px] font-bold tracking-[-0.01em] text-drc-navy">{solution.title}</h3>
@@ -106,7 +106,7 @@ export function SolutionsGrid() {
                 <ul className="mt-6 flex flex-col gap-3">
                   {solution.bullets.map((bullet) => (
                     <li key={bullet} className="flex items-center gap-3 text-[14px] font-medium text-drc-charcoal">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-drc-blue/10 text-drc-blue">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-drc-blue/10 text-drc-blue-ink">
                         <CheckIcon size={12} />
                       </span>
                       {bullet}

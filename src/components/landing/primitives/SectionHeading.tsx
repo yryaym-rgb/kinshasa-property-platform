@@ -39,7 +39,7 @@ export function SectionHeading({
         id={id}
         className={cn(
           'lp-display',
-          size === 'lg' ? 'text-[34px] sm:text-[40px] lg:text-[48px]' : 'text-[30px] sm:text-[34px] lg:text-[40px]',
+          size === 'lg' ? 'text-[30px] sm:text-[40px] lg:text-[48px]' : 'text-[28px] sm:text-[34px] lg:text-[40px]',
           tone === 'dark' ? 'text-white' : 'text-drc-navy',
           centered && 'max-w-[820px]',
         )}

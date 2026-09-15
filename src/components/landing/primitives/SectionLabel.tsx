@@ -12,10 +12,10 @@ interface SectionLabelProps {
 }
 
 const TONE_CLASS: Record<Tone, string> = {
-  blue: 'text-drc-blue',
-  red: 'text-drc-red',
+  blue: 'text-drc-blue-ink',
+  red: 'text-drc-red-ink',
   yellow: 'text-drc-yellow',
-  gold: 'text-drc-gold',
+  gold: 'text-drc-gold-ink',
   white: 'text-white/70',
 };
 

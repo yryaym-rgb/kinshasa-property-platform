@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
+import { LP_EASE } from './motion';
 
 type Direction = 'up' | 'down' | 'left' | 'right' | 'none';
 
@@ -22,8 +23,6 @@ const OFFSETS: Record<Direction, { x: number; y: number }> = {
   right: { x: -1, y: 0 },
   none: { x: 0, y: 0 },
 };
-
-export const LP_EASE = [0.16, 1, 0.3, 1] as const;
 
 /** Fade + slide into view on scroll. Respects `prefers-reduced-motion`. */
 export function Reveal({

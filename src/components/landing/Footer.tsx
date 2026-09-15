@@ -76,7 +76,7 @@ export function Footer() {
 
   return (
     <footer className="lp-dark relative bg-drc-navy text-white" aria-labelledby="footer-title">
-      <FlagBar />
+      <FlagBar className="shadow-[0_-1px_0_rgba(255,255,255,0.35)]" />
       <h2 id="footer-title" className="sr-only">
         Pied de page
       </h2>
@@ -85,7 +85,7 @@ export function Footer() {
         <div className="grid gap-12 lg:grid-cols-[1.6fr_repeat(4,1fr)] lg:gap-10">
           {/* ── Brand column ─────────────────────────────────── */}
           <div className="max-w-[340px]">
-            <Link to={ROUTES.HOME} className="inline-flex items-center gap-4 rounded-lg" aria-label="eLoyer Kinshasa — Accueil">
+            <Link to={ROUTES.HOME} className="inline-flex items-center gap-4 rounded-lg">
               <KinshasaSeal size={52} onDark />
               <EloyerWordmark tone="dark" />
             </Link>
@@ -157,7 +157,7 @@ export function Footer() {
             Powered by <span className="font-semibold text-white/80">Ville de Kinshasa</span>
           </p>
         </div>
-        <p className="pb-6 text-[11px] text-white/30">
+        <p className="pb-6 text-[11px] text-white/55">
           Photographies : MONUSCO (CC BY-SA 2.0), via Wikimedia Commons.
         </p>
       </div>

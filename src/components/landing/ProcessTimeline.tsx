@@ -98,7 +98,7 @@ export function ProcessTimeline() {
                   </div>
 
                   <div className="pt-3 lg:pt-6">
-                    <p className="lp-mono mb-2 text-[11px] font-semibold uppercase tracking-[2px] text-drc-gray-400">
+                    <p className="lp-mono mb-2 text-[11px] font-semibold uppercase tracking-[2px] text-drc-gray-500">
                       Étape 0{index + 1}
                     </p>
                     <h3 className="font-heading text-[18px] font-bold leading-snug text-drc-navy">{step.title}</h3>

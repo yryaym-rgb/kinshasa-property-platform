@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /bailleur/
+Disallow: /locataire/
+Disallow: /admin/
+Disallow: /fiscal/
+
+Sitemap: https://eloyer-kinshasa.cd/sitemap.xml

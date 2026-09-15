@@ -9,7 +9,7 @@ import { KinshasaLogo, KinshasaSeal } from './primitives/KinshasaLogo';
 import { FlagBar } from './primitives/FlagBar';
 import { ArrowRightIcon, CheckIcon, ChevronDownIcon, CloseIcon, DRCFlag, MenuIcon } from './icons';
 
-export const NAV_LINKS = [
+const NAV_LINKS = [
   { label: 'Accueil', id: 'accueil' },
   { label: 'Services', id: 'services' },
   { label: 'Fonctionnalités', id: 'fonctionnalites' },
@@ -89,20 +89,20 @@ export function Navbar() {
       <header className={cn('lp-nav', scrolled && 'lp-nav--scrolled')}>
         <div className="lp-container flex h-[80px] items-center justify-between gap-6">
           {/* Left — identity */}
-          <Link to={ROUTES.HOME} className="flex shrink-0 items-center rounded-lg" aria-label="eLoyer Kinshasa — Accueil">
+          <Link to={ROUTES.HOME} className="flex shrink-0 items-center rounded-lg">
             <KinshasaLogo priority className="hidden sm:flex" />
             <span className="flex items-center gap-3 sm:hidden">
               <KinshasaSeal size={40} priority />
               <span className="font-heading text-[18px] font-bold tracking-[-0.02em]">
-                <span className="text-drc-blue">eLoyer</span> <span className="text-drc-navy">Kinshasa</span>
+                <span className="text-drc-blue-ink">eLoyer</span> <span className="text-drc-navy">Kinshasa</span>
               </span>
             </span>
           </Link>
 
           {/* Center — primary navigation */}
-          <nav aria-label="Navigation principale" className="hidden lg:block">
+          <nav aria-label="Navigation principale" className="hidden xl:block">
             <LayoutGroup id="lp-nav">
-              <ul className="flex items-center gap-8">
+              <ul className="flex items-center gap-7 whitespace-nowrap">
                 {NAV_LINKS.map((link) => {
                   const isActive = active === link.id;
                   return (
@@ -131,12 +131,12 @@ export function Navbar() {
           </nav>
 
           {/* Right — utilities */}
-          <div className="hidden items-center gap-5 lg:flex">
+          <div className="hidden shrink-0 items-center gap-5 whitespace-nowrap xl:flex">
             <LanguageMenu current={currentLanguage} onChange={setLanguage} />
             <span aria-hidden="true" className="h-6 w-px bg-drc-gray-200" />
             <Link
               to={ROUTES.LOGIN}
-              className="rounded-md text-[15px] font-medium text-drc-charcoal transition-colors hover:text-drc-blue"
+              className="rounded-md text-[15px] font-medium text-drc-charcoal transition-colors hover:text-drc-blue-ink"
             >
               Se connecter
             </Link>
@@ -149,7 +149,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl text-drc-navy transition-colors hover:bg-drc-gray-100 lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-xl text-drc-navy transition-colors hover:bg-drc-gray-100 xl:hidden"
             aria-label="Ouvrir le menu"
             aria-expanded={mobileOpen}
             aria-controls="lp-mobile-menu"
@@ -188,11 +188,13 @@ function LanguageMenu({
   return (
     <Menu as="div" className="relative">
       <MenuButton
-        className="group flex items-center gap-2 rounded-md px-1 py-1 text-[14px] font-semibold text-drc-charcoal transition-colors hover:text-drc-blue data-[open]:text-drc-blue"
-        aria-label={`Langue : ${current.label}`}
+        className="group flex items-center gap-2 rounded-md px-1 py-1 text-[14px] font-semibold text-drc-charcoal transition-colors hover:text-drc-blue-ink data-[open]:text-drc-blue-ink"
       >
         <DRCFlag width={20} title="Langue" />
-        <span>{current.short}</span>
+        <span>
+          {current.short}
+          <span className="sr-only"> — {current.label}</span>
+        </span>
         <ChevronDownIcon size={14} className="transition-transform duration-300 group-data-[open]:rotate-180" />
       </MenuButton>
       <MenuItems
@@ -204,13 +206,13 @@ function LanguageMenu({
             <button
               type="button"
               onClick={() => onChange(lang.code)}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-[14px] text-drc-charcoal data-[focus]:bg-drc-gray-100 data-[focus]:text-drc-blue"
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-[14px] text-drc-charcoal data-[focus]:bg-drc-gray-100 data-[focus]:text-drc-blue-ink"
             >
               <span className="flex items-center gap-3">
-                <span className="lp-mono text-[11px] font-semibold text-drc-gray-400">{lang.short}</span>
+                <span className="lp-mono text-[11px] font-semibold text-drc-gray-500">{lang.short}</span>
                 {lang.label}
               </span>
-              {lang.code === current.code ? <CheckIcon size={16} className="text-drc-blue" /> : null}
+              {lang.code === current.code ? <CheckIcon size={16} className="text-drc-blue-ink" /> : null}
             </button>
           </MenuItem>
         ))}
@@ -243,7 +245,7 @@ function MobileMenu({
       role="dialog"
       aria-modal="true"
       aria-label="Menu"
-      className="fixed inset-0 z-[120] lg:hidden"
+      className="fixed inset-0 z-[120] xl:hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -276,7 +278,7 @@ function MobileMenu({
           </button>
         </div>
 
-        <nav aria-label="Navigation mobile" className="flex-1 overflow-y-auto px-6 pt-4">
+        <nav aria-label="Navigation mobile" className="flex-1 overflow-y-auto px-6 pb-8 pt-4">
           <ul className="flex flex-col">
             {NAV_LINKS.map((link, i) => (
               <motion.li
@@ -290,19 +292,19 @@ function MobileMenu({
                   onClick={(e) => onAnchor(e, link.id)}
                   aria-current={active === link.id ? 'true' : undefined}
                   className={cn(
-                    'flex items-center justify-between border-b border-drc-gray-200 py-4 font-heading text-[22px] font-bold text-drc-navy transition-colors hover:text-drc-blue',
-                    active === link.id && 'text-drc-blue',
+                    'flex items-center justify-between border-b border-drc-gray-200 py-4 font-heading text-[22px] font-bold text-drc-navy transition-colors hover:text-drc-blue-ink',
+                    active === link.id && 'text-drc-blue-ink',
                   )}
                 >
                   {link.label}
-                  <span className="lp-mono text-[11px] font-medium text-drc-gray-400">0{i + 1}</span>
+                  <span className="lp-mono text-[11px] font-medium text-drc-gray-500">0{i + 1}</span>
                 </a>
               </motion.li>
             ))}
           </ul>
 
           <div className="mt-6">
-            <p className="text-[11px] font-bold uppercase tracking-[2px] text-drc-gray-400">Langue</p>
+            <p className="text-[11px] font-bold uppercase tracking-[2px] text-drc-gray-500">Langue</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {LANGUAGES.map((lang) => (
                 <button
@@ -313,8 +315,8 @@ function MobileMenu({
                   className={cn(
                     'rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors',
                     language === lang.code
-                      ? 'border-drc-blue bg-drc-blue text-white'
-                      : 'border-drc-gray-200 text-drc-gray-600 hover:border-drc-blue hover:text-drc-blue',
+                      ? 'border-drc-blue-ink bg-drc-blue-ink text-white'
+                      : 'border-drc-gray-200 text-drc-gray-600 hover:border-drc-blue-ink hover:text-drc-blue-ink',
                   )}
                 >
                   {lang.label}
@@ -335,7 +337,7 @@ function MobileMenu({
           >
             Se connecter
           </Link>
-          <p className="mt-2 flex items-center justify-center gap-2 text-[11px] uppercase tracking-[1.5px] text-drc-gray-400">
+          <p className="mt-2 flex items-center justify-center gap-2 text-[11px] uppercase tracking-[1.5px] text-drc-gray-500">
             <DRCFlag width={18} /> Ville de Kinshasa
           </p>
         </div>

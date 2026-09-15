@@ -3,10 +3,11 @@ import { motion, useReducedMotion, type Variants } from 'framer-motion';
 import { ROUTES } from '@/config/routes';
 import { BREAKPOINTS, useMediaQuery } from '@/hooks/useMediaQuery';
 import heroWebp from '@/assets/landing/hero-kinshasa.webp';
+import heroWebpSm from '@/assets/landing/hero-kinshasa-1024.webp';
 import heroJpg from '@/assets/landing/hero-kinshasa.jpg';
 import { FloatingDashboard } from './primitives/FloatingDashboard';
 import { KinshasaSeal } from './primitives/KinshasaLogo';
-import { LP_EASE } from './primitives/Reveal';
+import { LP_EASE } from './primitives/motion';
 import {
   ArrowRightIcon,
   ChartIcon,
@@ -42,21 +43,22 @@ export function Hero() {
     <section id="accueil" className="lp-hero lp-section-anchor" aria-labelledby="hero-title">
       <div className="lp-hero__bg" aria-hidden="true">
         <picture>
-          <source srcSet={heroWebp} type="image/webp" />
+          <source srcSet={`${heroWebpSm} 1024w, ${heroWebp} 1600w`} sizes="100vw" type="image/webp" />
           <img src={heroJpg} alt="" width={1600} height={1067} fetchPriority="high" decoding="async" />
         </picture>
       </div>
       <div className="lp-hero__overlay" aria-hidden="true" />
       <div className="lp-hero__glow" aria-hidden="true" />
 
-      <div className="lp-container relative flex min-h-[max(100svh,700px)] flex-col pb-[112px] pt-[64px] lg:pt-[72px]">
+      <div className="lp-container relative flex min-h-[inherit] flex-col pb-[88px] pt-[48px] lg:pt-[56px]">
         <div className="grid flex-1 items-center gap-14 lg:grid-cols-[minmax(0,58fr)_minmax(0,42fr)] lg:gap-10">
           {/* ── Copy ─────────────────────────────────────────── */}
           <motion.div variants={container} initial="hidden" animate="visible" className="max-w-[680px]">
             <motion.div variants={item}>
               <span className="lp-hero__badge">
                 <DRCFlag width={18} />
-                République Démocratique du Congo — Ville de Kinshasa
+                <span className="sm:hidden">RDC — Ville de Kinshasa</span>
+                <span className="hidden sm:inline">République Démocratique du Congo — Ville de Kinshasa</span>
               </span>
             </motion.div>
 
@@ -70,7 +72,7 @@ export function Hero() {
               La plateforme numérique intégrée qui transforme la gestion locative à Kinshasa.
             </motion.p>
 
-            <motion.ul variants={item} className="mt-9 flex flex-wrap gap-x-8 gap-y-4" aria-label="Fonctionnalités clés">
+            <motion.ul variants={item} className="mt-9 grid max-w-[560px] grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2" aria-label="Fonctionnalités clés">
               {FEATURES.map(({ Icon, label }) => (
                 <li key={label} className="flex items-center gap-2.5 text-[14px] font-medium text-white">
                   <Icon size={24} className="shrink-0 text-drc-yellow" />
@@ -98,7 +100,7 @@ export function Hero() {
             initial={reduce ? false : { opacity: 0, y: 40, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1.2, delay: 0.45, ease: [...LP_EASE] }}
-            className="relative lg:justify-self-end lg:w-[132%] lg:max-w-none"
+            className="relative lg:w-[110%] lg:max-w-none lg:justify-self-start xl:w-[118%]"
           >
             <FloatingDashboard flat={!isDesktop} />
           </motion.div>
@@ -109,9 +111,9 @@ export function Hero() {
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 1 }}
-          className="mt-16 flex flex-col gap-5 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:gap-10"
+          className="mt-12 flex flex-col gap-5 border-t border-white/10 pt-7 sm:flex-row sm:items-center sm:gap-10"
         >
-          <p className="text-[12px] uppercase tracking-[1.5px] text-white/45">En partenariat avec</p>
+          <p className="shrink-0 whitespace-nowrap text-[12px] uppercase tracking-[1.5px] text-white/60">En partenariat avec</p>
           <ul className="flex flex-wrap items-center gap-x-10 gap-y-4" aria-label="Partenaires institutionnels">
             <li className="lp-trust-logo flex items-center gap-3 text-white">
               <KinshasaSeal size={28} onDark />

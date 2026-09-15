@@ -15,6 +15,9 @@
   /* DRC brand palette (landing page) */
   --color-drc-blue: #009fe3;
   --color-drc-blue-dark: #0086c2;
+  --color-drc-blue-ink: #0077b6;
+  --color-drc-red-ink: #d9262b;
+  --color-drc-gold-ink: #8a6e17;
   --color-drc-yellow: #ffdd00;
   --color-drc-red: #ef3e42;
   --color-drc-black: #0a0a0a;
@@ -24,6 +27,7 @@
   --color-drc-gray-100: #f5f7fa;
   --color-drc-gray-200: #e5e9f0;
   --color-drc-gray-400: #94a3b8;
+  --color-drc-gray-500: #5b6b80;
   --color-drc-gray-600: #475569;
   --color-drc-gold: #c9a227;
   --color-drc-gold-light: #f5e6b8;

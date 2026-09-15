@@ -1,4 +1,4 @@
-import { StrictMode, Suspense, lazy } from 'react';
+import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -7,9 +7,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { FullPageLoading } from '@/components/ui/LoadingSpinner';
 import { Toaster } from '@/components/ui/Toast';
+import App from './App';
 import '@/styles/index.css';
-
-const App = lazy(() => import('./App'));
 
 const queryClient = new QueryClient({
   defaultOptions: {

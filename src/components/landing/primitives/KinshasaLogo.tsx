@@ -58,14 +58,14 @@ export function EloyerWordmark({ tone = 'light', size = 'md', className, showCap
           size === 'md' ? 'text-[22px]' : 'text-[18px]',
         )}
       >
-        <span className="text-drc-blue">eLoyer</span>{' '}
+        <span className={cn(tone === 'dark' ? 'text-drc-blue' : size === 'md' ? 'text-drc-blue-dark' : 'text-drc-blue-ink')}>eLoyer</span>{' '}
         <span className={tone === 'dark' ? 'text-white' : 'text-drc-navy'}>Kinshasa</span>
       </span>
       {showCaption ? (
         <span
           className={cn(
             'mt-[5px] text-[9px] font-semibold uppercase tracking-[1.5px]',
-            tone === 'dark' ? 'text-white/50' : 'text-drc-gray-400',
+            tone === 'dark' ? 'text-white/55' : 'text-drc-gray-500',
           )}
         >
           Ville de Kinshasa

@@ -96,6 +96,7 @@ export function FloatingDashboard({ className, flat = false }: FloatingDashboard
     >
       <div className="lp-dash-glow" aria-hidden="true" />
       <div
+        aria-hidden="true"
         className={cn('absolute left-0 top-0', !flat && 'lp-dash-scene')}
         style={{ width: DESIGN_WIDTH, height: DESIGN_HEIGHT, transform: `scale(${scale})`, transformOrigin: 'top left' }}
       >
@@ -142,7 +143,7 @@ function Sidebar() {
   return (
     <aside className="flex w-[148px] shrink-0 flex-col bg-drc-navy px-3 py-4 text-white">
       <div className="flex items-center gap-2 px-1">
-        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-drc-blue font-heading text-[11px] font-extrabold">
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-drc-blue-ink font-heading text-[11px] font-extrabold">
           eL
         </span>
         <span className="font-heading text-[12px] font-bold leading-none">
@@ -155,7 +156,7 @@ function Sidebar() {
             key={label}
             className={cn(
               'flex items-center gap-2 rounded-md px-2 py-[7px] text-[10.5px] font-medium',
-              active ? 'bg-white/10 text-white' : 'text-white/55',
+              active ? 'bg-white/10 text-white' : 'text-white/70',
             )}
           >
             <Icon size={13} />
@@ -165,7 +166,7 @@ function Sidebar() {
         ))}
       </nav>
       <div className="mt-auto rounded-lg bg-white/[0.06] p-2.5">
-        <p className="text-[9px] uppercase tracking-[1px] text-white/45">Conformité</p>
+        <p className="text-[9px] uppercase tracking-[1px] text-white/70">Conformité</p>
         <p className="mt-1 font-heading text-[13px] font-bold text-drc-yellow">100 %</p>
         <div className="mt-1.5 h-1 rounded-full bg-white/10">
           <div className="h-1 w-full rounded-full bg-drc-yellow" />
@@ -198,12 +199,12 @@ function Main() {
         {KPIS.map((kpi) => (
           <div key={kpi.label} className="relative overflow-hidden rounded-lg border border-drc-gray-200 bg-white p-2.5">
             <span className={cn('absolute left-0 top-0 h-full w-[3px]', KPI_ACCENT[kpi.tone])} />
-            <p className="text-[8.5px] font-medium uppercase tracking-[0.6px] text-drc-gray-400">{kpi.label}</p>
+            <p className="text-[8.5px] font-medium uppercase tracking-[0.6px] text-drc-gray-500">{kpi.label}</p>
             <p className="lp-tabular mt-1 font-heading text-[14px] font-extrabold leading-none">
               {kpi.value}
-              {'unit' in kpi ? <span className="ml-0.5 text-[8px] font-semibold text-drc-gray-400">{kpi.unit}</span> : null}
+              {'unit' in kpi ? <span className="ml-0.5 text-[8px] font-semibold text-drc-gray-500">{kpi.unit}</span> : null}
             </p>
-            <p className="mt-1 text-[8.5px] font-semibold text-emerald-600">{kpi.delta} ce mois</p>
+            <p className="mt-1 text-[8.5px] font-semibold text-emerald-700">{kpi.delta} ce mois</p>
           </div>
         ))}
       </div>
@@ -212,9 +213,9 @@ function Main() {
         <div className="flex flex-col rounded-lg border border-drc-gray-200 bg-white p-3">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-bold">Recettes locatives</p>
-            <p className="text-[8.5px] text-drc-gray-400">12 derniers mois · FC</p>
+            <p className="text-[8.5px] text-drc-gray-500">12 derniers mois · FC</p>
           </div>
-          <div className="mt-2 flex flex-1 items-end gap-[6px]" aria-hidden="true">
+          <div className="mt-2 flex h-[128px] items-stretch gap-[6px]" aria-hidden="true">
             {BARS.map((h, i) => (
               <div key={MONTHS[i]! + i} className="flex flex-1 flex-col items-center gap-1">
                 <div className="flex w-full flex-1 items-end">
@@ -223,7 +224,7 @@ function Main() {
                     style={{ height: `${h}%`, animationDelay: `${400 + i * 60}ms`, opacity: i === BARS.length - 1 ? 1 : 0.55 + (i / BARS.length) * 0.45 }}
                   />
                 </div>
-                <span className="text-[7.5px] font-medium text-drc-gray-400">{MONTHS[i]}</span>
+                <span className="text-[7.5px] font-medium text-drc-gray-500">{MONTHS[i]}</span>
               </div>
             ))}
           </div>
@@ -232,7 +233,7 @@ function Main() {
         <div className="flex flex-col rounded-lg border border-drc-gray-200 bg-white p-3">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-bold">Paiements récents</p>
-            <span className="text-[8.5px] font-semibold text-drc-blue">Tout voir</span>
+            <span className="text-[8.5px] font-semibold text-drc-blue-ink">Tout voir</span>
           </div>
           <ul className="mt-2 flex flex-col gap-[7px]">
             {PAYMENTS.map((p) => (
@@ -242,11 +243,11 @@ function Main() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[9.5px] font-semibold leading-tight">{p.name}</span>
-                  <span className="block truncate text-[8px] text-drc-gray-400">{p.where}</span>
+                  <span className="block truncate text-[8px] text-drc-gray-500">{p.where}</span>
                 </span>
                 <span className="text-right">
                   <span className="lp-tabular block text-[9.5px] font-bold leading-tight">{p.amount}</span>
-                  <span className="flex items-center justify-end gap-1 text-[7.5px] font-semibold text-emerald-600">
+                  <span className="flex items-center justify-end gap-1 text-[7.5px] font-semibold text-emerald-700">
                     <QrReceiptIcon size={8} /> Reçu
                   </span>
                 </span>

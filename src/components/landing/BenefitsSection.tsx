@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import boulevard from '@/assets/landing/kinshasa-boulevard.webp';
+import boulevardSm from '@/assets/landing/kinshasa-boulevard-560.webp';
 import { SectionLabel } from './primitives/SectionLabel';
 import { Reveal, Stagger, StaggerItem } from './primitives/Reveal';
 import { FlagBar } from './primitives/FlagBar';
@@ -43,7 +44,7 @@ const BENEFITS: Benefit[] = [
     title: 'Conformité fiscale',
     description: 'Aligné avec la DGI et la législation congolaise.',
     Icon: StampIcon,
-    tone: 'bg-drc-gold/12 text-drc-gold',
+    tone: 'bg-drc-gold/12 text-drc-gold-ink',
   },
   {
     title: 'Support local',
@@ -63,6 +64,8 @@ export function BenefitsSection() {
             <figure className="lp-photo-frame aspect-[4/5] max-h-[680px] w-full">
               <img
                 src={boulevard}
+                srcSet={`${boulevardSm} 560w, ${boulevard} 800w`}
+                sizes="(min-width: 1024px) 40vw, 100vw"
                 alt="Le boulevard du 30 Juin et les immeubles de la Gombe, à Kinshasa, en fin de journée"
                 width={800}
                 height={920}
@@ -84,15 +87,15 @@ export function BenefitsSection() {
                   </span>
                   <div>
                     <p className="text-[13px] font-bold text-drc-navy">Reçu vérifié</p>
-                    <p className="lp-mono text-[10px] text-drc-gray-400">REC-KIN-2025-018472</p>
+                    <p className="lp-mono text-[10px] text-drc-gray-500">REC-KIN-2025-018472</p>
                   </div>
                 </div>
                 <div className="mt-3 flex items-end justify-between border-t border-drc-gray-200 pt-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[1px] text-drc-gray-400">Loyer · Septembre</p>
+                    <p className="text-[10px] uppercase tracking-[1px] text-drc-gray-500">Loyer · Septembre</p>
                     <p className="lp-tabular mt-0.5 font-heading text-[16px] font-extrabold text-drc-navy">650 000 FC</p>
                   </div>
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-600">Payé</span>
+                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Payé</span>
                 </div>
               </div>
             </Reveal>
@@ -106,9 +109,9 @@ export function BenefitsSection() {
               <SectionLabel number="03" tone="gold">
                 Nos engagements
               </SectionLabel>
-              <h2 id="benefits-title" className="lp-display mt-5 text-[34px] text-drc-navy sm:text-[40px] lg:text-[48px]">
+              <h2 id="benefits-title" className="lp-display mt-5 text-[30px] text-drc-navy sm:text-[40px] lg:text-[48px]">
                 Conçu pour Kinshasa.
-                <br />
+                <br className="hidden sm:block" />
                 Construit pour durer.
               </h2>
               <p className="mt-6 max-w-[540px] text-[17px] leading-[1.65] text-drc-gray-600">

@@ -1,34 +1,31 @@
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/config/routes';
 import { Reveal } from './primitives/Reveal';
+import { FlagBar } from './primitives/FlagBar';
 import { ArrowRightIcon, HeadsetIcon } from './icons';
 
 export function CTASection() {
   return (
     <section
       id="contact"
-      className="lp-section-anchor lp-dark relative overflow-hidden bg-drc-blue py-24 lg:py-[100px]"
+      className="lp-section-anchor lp-dark relative overflow-hidden bg-drc-blue-ink py-24 lg:py-[100px]"
       aria-labelledby="cta-title"
     >
       {/* Layered colour blocks — flag colours as architecture, not decoration */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-[18%] -top-[40%] h-[140%] w-[55%] rotate-[18deg] bg-[#0086C2]/70"
+        className="pointer-events-none absolute -right-[14%] -top-[40%] h-[160%] w-[34%] rotate-[18deg] bg-drc-blue"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[12%] -bottom-[60%] h-[120%] w-[40%] rotate-[18deg] bg-white/[0.06]"
+        className="pointer-events-none absolute -bottom-[60%] -left-[16%] h-[120%] w-[28%] rotate-[18deg] bg-drc-blue/60"
       />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-[10%] top-0 h-full w-[6px] bg-drc-yellow/90"
-      />
-      <div aria-hidden="true" className="pointer-events-none absolute right-[calc(10%+10px)] top-0 h-full w-[6px] bg-drc-red/90" />
+      <FlagBar orientation="vertical" className="absolute right-0 top-0 hidden !w-2 lg:block" />
 
       <div className="lp-container relative">
         <Reveal className="mx-auto flex max-w-[860px] flex-col items-center text-center">
           <p className="lp-mono text-[12px] font-semibold uppercase tracking-[3px] text-white/70">05 / Rejoignez-nous</p>
-          <h2 id="cta-title" className="lp-display mt-5 text-[34px] text-white sm:text-[42px] lg:text-[48px]">
+          <h2 id="cta-title" className="lp-display mt-5 text-[30px] text-white sm:text-[42px] lg:text-[48px]">
             Rejoignez la révolution numérique du secteur locatif.
           </h2>
           <p className="mt-6 max-w-[620px] text-[17px] leading-[1.65] text-white/85 sm:text-[18px]">
