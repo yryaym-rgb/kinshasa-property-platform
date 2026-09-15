@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/cn';
 import { APP_CONFIG } from '@/config/app.config';
 
 const sizeClasses = {

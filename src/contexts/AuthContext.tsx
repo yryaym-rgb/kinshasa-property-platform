@@ -7,17 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/config/supabase';
 import { useAuthStore } from '@/stores/auth.store';
-import {
-  sendOTP,
-  verifyOTP,
-  signInWithPassword,
-  registerUser,
-  fetchUserProfile,
-  logout as authLogout,
-  updateProfile as authUpdateProfile,
-} from '@/services/auth.service';
 import { ROUTES, getDashboardPathForRole } from '@/config/routes';
 import type { AuthUser, LoginFormData, RegisterFormData, UserProfileFormData } from '@/types';
 
@@ -37,6 +27,11 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// The Supabase SDK (~55 KB gzipped) is loaded on demand so the public landing
+// page's first paint never waits on it. Every consumer below is already async.
+const loadSupabase = () => import('@/config/supabase').then((m) => m.supabase);
+const loadAuthService = () => import('@/services/auth.service');
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { user, session, loading, setUser, setSession, setLoading, clearAuth, updateProfile: storeUpdateProfile } = useAuthStore();
@@ -44,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadUserProfile = useCallback(async (userId: string) => {
     try {
+      const { fetchUserProfile } = await loadAuthService();
       const profile = await fetchUserProfile(userId);
       setUser(profile as AuthUser);
     } catch {
@@ -52,9 +48,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [setUser]);
 
   useEffect(() => {
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+
     const initAuth = async () => {
       setLoading(true);
+      const supabase = await loadSupabase();
+      if (cancelled) return;
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+        setSession(newSession);
+        if (event === 'SIGNED_IN' && newSession?.user) {
+          await loadUserProfile(newSession.user.id);
+        }
+        if (event === 'SIGNED_OUT') {
+          clearAuth();
+        }
+      });
+      unsubscribe = () => subscription.unsubscribe();
+
       const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (cancelled) return;
       setSession(currentSession);
       if (currentSession?.user) {
         await loadUserProfile(currentSession.user.id);
@@ -64,22 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      setSession(newSession);
-      if (event === 'SIGNED_IN' && newSession?.user) {
-        await loadUserProfile(newSession.user.id);
-      }
-      if (event === 'SIGNED_OUT') {
-        clearAuth();
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [setSession, setLoading, loadUserProfile, clearAuth]);
 
   const login = useCallback(async (data: LoginFormData) => {
     setLoading(true);
     try {
+      const { signInWithPassword, sendOTP, fetchUserProfile } = await loadAuthService();
       if (data.password) {
         const result = await signInWithPassword(data.phone, data.password);
         if (result.session) {
@@ -98,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [setLoading, setSession, loadUserProfile, navigate]);
 
   const loginWithOTP = useCallback(async (phone: string) => {
+    const { sendOTP } = await loadAuthService();
     await sendOTP(phone);
     navigate(`${ROUTES.VERIFY}?phone=${encodeURIComponent(phone)}`);
   }, [navigate]);
@@ -105,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyOTPCode = useCallback(async (phone: string, token: string) => {
     setLoading(true);
     try {
+      const { verifyOTP, fetchUserProfile } = await loadAuthService();
       const result = await verifyOTP(phone, token);
       if (result.session) {
         setSession(result.session);
@@ -118,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [setLoading, setSession, loadUserProfile, navigate]);
 
   const register = useCallback(async (data: RegisterFormData) => {
+    const [supabase, { registerUser }] = await Promise.all([loadSupabase(), loadAuthService()]);
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession?.user) throw new Error('Session requise pour l\'inscription');
     await registerUser({ ...data, id: currentSession.user.id });
@@ -126,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUserProfile, navigate]);
 
   const logout = useCallback(async () => {
+    const { logout: authLogout } = await loadAuthService();
     await authLogout();
     clearAuth();
     navigate(ROUTES.LOGIN);
@@ -133,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = useCallback(async (data: UserProfileFormData) => {
     if (!user) throw new Error('Non authentifié');
+    const { updateProfile: authUpdateProfile } = await loadAuthService();
     const updated = await authUpdateProfile(user.id, data);
     storeUpdateProfile(updated);
   }, [user, storeUpdateProfile]);

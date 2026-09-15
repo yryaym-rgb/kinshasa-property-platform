@@ -1,88 +1,171 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { AuthLayout } from '@/components/layouts/AuthLayout';
-import {
-  BailleurLayout,
-  LocataireLayout,
-  AdminLayout,
-  FiscalLayout,
-} from '@/components/layouts/DashboardLayout';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { NotFound } from '@/components/common/NotFound';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { LoginPage } from '@/pages/auth/LoginPage';
-import { RegisterPage } from '@/pages/auth/RegisterPage';
-import { VerifyOTPPage } from '@/pages/auth/VerifyOTPPage';
-import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
-import {
-  AdminDashboard,
-  FiscalDashboard,
-  PlaceholderPage,
-} from '@/pages/dashboard/PlaceholderPages';
-import { ROUTES } from '@/config/routes';
-import { APP_CONFIG } from '@/config/app.config';
+import { lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { NotFound } from "@/components/common/NotFound";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { ROUTES } from "@/config/routes";
+import { APP_CONFIG } from "@/config/app.config";
+// The landing page is the primary entry point, so it ships in the initial
+// bundle: its chunks get <link rel="modulepreload"> in index.html instead of
+// being discovered only after React renders the router.
+import { LandingPage } from "@/pages/public/LandingPage";
 
-const LandingPage = lazy(() =>
-  import('@/pages/public/LandingPage').then((m) => ({ default: m.LandingPage })),
+// Auth surface and dashboard shells are code-split so the public landing page
+// only ships what it renders.
+const AuthLayout = lazy(() =>
+  import("@/components/layouts/AuthLayout").then((m) => ({
+    default: m.AuthLayout,
+  })),
+);
+const BailleurLayout = lazy(() =>
+  import("@/components/layouts/DashboardLayout").then((m) => ({
+    default: m.BailleurLayout,
+  })),
+);
+const LocataireLayout = lazy(() =>
+  import("@/components/layouts/DashboardLayout").then((m) => ({
+    default: m.LocataireLayout,
+  })),
+);
+const AdminLayout = lazy(() =>
+  import("@/components/layouts/DashboardLayout").then((m) => ({
+    default: m.AdminLayout,
+  })),
+);
+const FiscalLayout = lazy(() =>
+  import("@/components/layouts/DashboardLayout").then((m) => ({
+    default: m.FiscalLayout,
+  })),
+);
+const LoginPage = lazy(() =>
+  import("@/pages/auth/LoginPage").then((m) => ({ default: m.LoginPage })),
+);
+const RegisterPage = lazy(() =>
+  import("@/pages/auth/RegisterPage").then((m) => ({
+    default: m.RegisterPage,
+  })),
+);
+const VerifyOTPPage = lazy(() =>
+  import("@/pages/auth/VerifyOTPPage").then((m) => ({
+    default: m.VerifyOTPPage,
+  })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import("@/pages/auth/ForgotPasswordPage").then((m) => ({
+    default: m.ForgotPasswordPage,
+  })),
+);
+const AdminDashboard = lazy(() =>
+  import("@/pages/dashboard/PlaceholderPages").then((m) => ({
+    default: m.AdminDashboard,
+  })),
+);
+const FiscalDashboard = lazy(() =>
+  import("@/pages/dashboard/PlaceholderPages").then((m) => ({
+    default: m.FiscalDashboard,
+  })),
+);
+const PlaceholderPage = lazy(() =>
+  import("@/pages/dashboard/PlaceholderPages").then((m) => ({
+    default: m.PlaceholderPage,
+  })),
 );
 
 const BailleurDashboard = lazy(() =>
-  import('@/pages/bailleur/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+  import("@/pages/bailleur/DashboardPage").then((m) => ({
+    default: m.DashboardPage,
+  })),
 );
 const PropertiesListPage = lazy(() =>
-  import('@/pages/bailleur/properties/ListPage').then((m) => ({ default: m.PropertiesListPage })),
+  import("@/pages/bailleur/properties/ListPage").then((m) => ({
+    default: m.PropertiesListPage,
+  })),
 );
 const PropertyDetailPage = lazy(() =>
-  import('@/pages/bailleur/properties/DetailPage').then((m) => ({ default: m.PropertyDetailPage })),
+  import("@/pages/bailleur/properties/DetailPage").then((m) => ({
+    default: m.PropertyDetailPage,
+  })),
 );
 const PropertyFormPage = lazy(() =>
-  import('@/pages/bailleur/properties/FormPage').then((m) => ({ default: m.PropertyFormPage })),
+  import("@/pages/bailleur/properties/FormPage").then((m) => ({
+    default: m.PropertyFormPage,
+  })),
 );
 const TenantsListPage = lazy(() =>
-  import('@/pages/bailleur/tenants/ListPage').then((m) => ({ default: m.TenantsListPage })),
+  import("@/pages/bailleur/tenants/ListPage").then((m) => ({
+    default: m.TenantsListPage,
+  })),
 );
 const TenantDetailPage = lazy(() =>
-  import('@/pages/bailleur/tenants/DetailPage').then((m) => ({ default: m.TenantDetailPage })),
+  import("@/pages/bailleur/tenants/DetailPage").then((m) => ({
+    default: m.TenantDetailPage,
+  })),
 );
 const ContractsListPage = lazy(() =>
-  import('@/pages/bailleur/contracts/ListPage').then((m) => ({ default: m.ContractsListPage })),
+  import("@/pages/bailleur/contracts/ListPage").then((m) => ({
+    default: m.ContractsListPage,
+  })),
 );
 const CreateContractPage = lazy(() =>
-  import('@/pages/bailleur/contracts/CreatePage').then((m) => ({ default: m.CreateContractPage })),
+  import("@/pages/bailleur/contracts/CreatePage").then((m) => ({
+    default: m.CreateContractPage,
+  })),
 );
 const ContractDetailPage = lazy(() =>
-  import('@/pages/bailleur/contracts/DetailPage').then((m) => ({ default: m.ContractDetailPage })),
+  import("@/pages/bailleur/contracts/DetailPage").then((m) => ({
+    default: m.ContractDetailPage,
+  })),
 );
 const LocataireDashboard = lazy(() =>
-  import('@/pages/locataire/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+  import("@/pages/locataire/DashboardPage").then((m) => ({
+    default: m.DashboardPage,
+  })),
 );
 const LocataireContractsListPage = lazy(() =>
-  import('@/pages/locataire/contracts/ListPage').then((m) => ({ default: m.ContractsListPage })),
+  import("@/pages/locataire/contracts/ListPage").then((m) => ({
+    default: m.ContractsListPage,
+  })),
 );
 const LocataireContractDetailPage = lazy(() =>
-  import('@/pages/locataire/contracts/DetailPage').then((m) => ({ default: m.ContractDetailPage })),
+  import("@/pages/locataire/contracts/DetailPage").then((m) => ({
+    default: m.ContractDetailPage,
+  })),
 );
 const LocatairePaymentsListPage = lazy(() =>
-  import('@/pages/locataire/payments/ListPage').then((m) => ({ default: m.PaymentsListPage })),
+  import("@/pages/locataire/payments/ListPage").then((m) => ({
+    default: m.PaymentsListPage,
+  })),
 );
 const LocatairePaymentPage = lazy(() =>
-  import('@/pages/locataire/payments/PaymentPage').then((m) => ({ default: m.PaymentPage })),
+  import("@/pages/locataire/payments/PaymentPage").then((m) => ({
+    default: m.PaymentPage,
+  })),
 );
 const LocatairePaymentSuccessPage = lazy(() =>
-  import('@/pages/locataire/payments/SuccessPage').then((m) => ({ default: m.SuccessPage })),
+  import("@/pages/locataire/payments/SuccessPage").then((m) => ({
+    default: m.SuccessPage,
+  })),
 );
 const LocatairePaymentFailedPage = lazy(() =>
-  import('@/pages/locataire/payments/FailedPage').then((m) => ({ default: m.FailedPage })),
+  import("@/pages/locataire/payments/FailedPage").then((m) => ({
+    default: m.FailedPage,
+  })),
 );
 const LocataireReceiptsListPage = lazy(() =>
-  import('@/pages/locataire/receipts/ListPage').then((m) => ({ default: m.ReceiptsListPage })),
+  import("@/pages/locataire/receipts/ListPage").then((m) => ({
+    default: m.ReceiptsListPage,
+  })),
 );
 const LocataireReceiptDetailPage = lazy(() =>
-  import('@/pages/locataire/receipts/DetailPage').then((m) => ({ default: m.ReceiptDetailPage })),
+  import("@/pages/locataire/receipts/DetailPage").then((m) => ({
+    default: m.ReceiptDetailPage,
+  })),
 );
 const LocataireProfilePage = lazy(() =>
-  import('@/pages/locataire/profile/Page').then((m) => ({ default: m.ProfilePage })),
+  import("@/pages/locataire/profile/Page").then((m) => ({
+    default: m.ProfilePage,
+  })),
 );
 
 function PageLoader() {
@@ -99,7 +182,8 @@ function UnauthorizedPage() {
       <div className="text-center">
         <h1 className="font-heading text-2xl font-bold">Accès non autorisé</h1>
         <p className="mt-2 text-[var(--color-muted-foreground)]">
-          Vous n&apos;avez pas les permissions nécessaires pour accéder à cette page.
+          Vous n&apos;avez pas les permissions nécessaires pour accéder à cette
+          page.
         </p>
       </div>
     </div>
@@ -114,127 +198,314 @@ export default function App() {
         <meta name="description" content={APP_CONFIG.tagline} />
       </Helmet>
 
-      <Routes>
-        {/* Public routes */}
-        <Route
-          path={ROUTES.HOME}
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <LandingPage />
-            </Suspense>
-          }
-        />
-        <Route element={<AuthLayout />}>
-          <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-          <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-          <Route path={ROUTES.VERIFY} element={<VerifyOTPPage />} />
-          <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
-        </Route>
-        <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
-
-        {/* Bailleur routes */}
-        <Route element={<ProtectedRoute allowedRoles={['bailleur', 'gestionnaire', 'agence']} />}>
-          <Route element={<BailleurLayout />}>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path={ROUTES.HOME} element={<LandingPage />} />
+          <Route element={<AuthLayout />}>
+            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+            <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+            <Route path={ROUTES.VERIFY} element={<VerifyOTPPage />} />
             <Route
-              path={ROUTES.BAILLEUR.DASHBOARD}
-              element={<Suspense fallback={<PageLoader />}><BailleurDashboard /></Suspense>}
+              path={ROUTES.FORGOT_PASSWORD}
+              element={<ForgotPasswordPage />}
             />
-            <Route
-              path={ROUTES.BAILLEUR.PROPERTIES}
-              element={<Suspense fallback={<PageLoader />}><PropertiesListPage /></Suspense>}
-            />
-            <Route
-              path={ROUTES.BAILLEUR.PROPERTY_NEW}
-              element={<Suspense fallback={<PageLoader />}><PropertyFormPage /></Suspense>}
-            />
-            <Route
-              path={ROUTES.BAILLEUR.PROPERTY_EDIT}
-              element={<Suspense fallback={<PageLoader />}><PropertyFormPage /></Suspense>}
-            />
-            <Route
-              path={ROUTES.BAILLEUR.PROPERTY_DETAIL}
-              element={<Suspense fallback={<PageLoader />}><PropertyDetailPage /></Suspense>}
-            />
-            <Route
-              path={ROUTES.BAILLEUR.TENANTS}
-              element={<Suspense fallback={<PageLoader />}><TenantsListPage /></Suspense>}
-            />
-            <Route
-              path={ROUTES.BAILLEUR.TENANT_DETAIL}
-              element={<Suspense fallback={<PageLoader />}><TenantDetailPage /></Suspense>}
-            />
-            <Route
-              path={ROUTES.BAILLEUR.CONTRACTS}
-              element={<Suspense fallback={<PageLoader />}><ContractsListPage /></Suspense>}
-            />
-            <Route
-              path={ROUTES.BAILLEUR.CONTRACT_NEW}
-              element={<Suspense fallback={<PageLoader />}><CreateContractPage /></Suspense>}
-            />
-            <Route
-              path={ROUTES.BAILLEUR.CONTRACT_EDIT}
-              element={<Suspense fallback={<PageLoader />}><CreateContractPage /></Suspense>}
-            />
-            <Route
-              path={ROUTES.BAILLEUR.CONTRACT_DETAIL}
-              element={<Suspense fallback={<PageLoader />}><ContractDetailPage /></Suspense>}
-            />
-            <Route path={ROUTES.BAILLEUR.PAYMENTS} element={<PlaceholderPage title="Paiements" />} />
-            <Route path={ROUTES.BAILLEUR.RECEIPTS} element={<PlaceholderPage title="Reçus" />} />
-            <Route path={ROUTES.BAILLEUR.TAXES} element={<PlaceholderPage title="Fiscalité" />} />
-            <Route path={ROUTES.BAILLEUR.REPORTS} element={<PlaceholderPage title="Rapports" />} />
-            <Route path={ROUTES.BAILLEUR.PROFILE} element={<PlaceholderPage title="Profil" />} />
-            <Route path={ROUTES.BAILLEUR.ROOT} element={<Navigate to={ROUTES.BAILLEUR.DASHBOARD} replace />} />
           </Route>
-        </Route>
+          <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 
-        {/* Locataire routes */}
-        <Route element={<ProtectedRoute allowedRoles={['locataire']} />}>
-          <Route element={<LocataireLayout />}>
-            <Route path={ROUTES.LOCATAIRE.HOME} element={<Suspense fallback={<PageLoader />}><LocataireDashboard /></Suspense>} />
-            <Route path={ROUTES.LOCATAIRE.CONTRACTS} element={<Suspense fallback={<PageLoader />}><LocataireContractsListPage /></Suspense>} />
-            <Route path={ROUTES.LOCATAIRE.CONTRACT_DETAIL} element={<Suspense fallback={<PageLoader />}><LocataireContractDetailPage /></Suspense>} />
-            <Route path={ROUTES.LOCATAIRE.PAYMENTS} element={<Suspense fallback={<PageLoader />}><LocatairePaymentsListPage /></Suspense>} />
-            <Route path={ROUTES.LOCATAIRE.PAYMENT_NEW} element={<Suspense fallback={<PageLoader />}><LocatairePaymentPage /></Suspense>} />
-            <Route path={ROUTES.LOCATAIRE.PAYMENT_SUCCESS} element={<Suspense fallback={<PageLoader />}><LocatairePaymentSuccessPage /></Suspense>} />
-            <Route path={ROUTES.LOCATAIRE.PAYMENT_FAILED} element={<Suspense fallback={<PageLoader />}><LocatairePaymentFailedPage /></Suspense>} />
-            <Route path={ROUTES.LOCATAIRE.RECEIPTS} element={<Suspense fallback={<PageLoader />}><LocataireReceiptsListPage /></Suspense>} />
-            <Route path={ROUTES.LOCATAIRE.RECEIPT_DETAIL} element={<Suspense fallback={<PageLoader />}><LocataireReceiptDetailPage /></Suspense>} />
-            <Route path={ROUTES.LOCATAIRE.NOTIFICATIONS} element={<PlaceholderPage title="Notifications" />} />
-            <Route path={ROUTES.LOCATAIRE.PROFILE} element={<Suspense fallback={<PageLoader />}><LocataireProfilePage /></Suspense>} />
-            <Route path="/locataire/accueil" element={<Navigate to={ROUTES.LOCATAIRE.HOME} replace />} />
-            <Route path={ROUTES.LOCATAIRE.ROOT} element={<Navigate to={ROUTES.LOCATAIRE.HOME} replace />} />
+          {/* Bailleur routes */}
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={["bailleur", "gestionnaire", "agence"]}
+              />
+            }
+          >
+            <Route element={<BailleurLayout />}>
+              <Route
+                path={ROUTES.BAILLEUR.DASHBOARD}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <BailleurDashboard />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.PROPERTIES}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <PropertiesListPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.PROPERTY_NEW}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <PropertyFormPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.PROPERTY_EDIT}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <PropertyFormPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.PROPERTY_DETAIL}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <PropertyDetailPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.TENANTS}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <TenantsListPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.TENANT_DETAIL}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <TenantDetailPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.CONTRACTS}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <ContractsListPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.CONTRACT_NEW}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <CreateContractPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.CONTRACT_EDIT}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <CreateContractPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.CONTRACT_DETAIL}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <ContractDetailPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.PAYMENTS}
+                element={<PlaceholderPage title="Paiements" />}
+              />
+              <Route
+                path={ROUTES.BAILLEUR.RECEIPTS}
+                element={<PlaceholderPage title="Reçus" />}
+              />
+              <Route
+                path={ROUTES.BAILLEUR.TAXES}
+                element={<PlaceholderPage title="Fiscalité" />}
+              />
+              <Route
+                path={ROUTES.BAILLEUR.REPORTS}
+                element={<PlaceholderPage title="Rapports" />}
+              />
+              <Route
+                path={ROUTES.BAILLEUR.PROFILE}
+                element={<PlaceholderPage title="Profil" />}
+              />
+              <Route
+                path={ROUTES.BAILLEUR.ROOT}
+                element={<Navigate to={ROUTES.BAILLEUR.DASHBOARD} replace />}
+              />
+            </Route>
           </Route>
-        </Route>
 
-        {/* Admin routes */}
-        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-          <Route element={<AdminLayout />}>
-            <Route path={ROUTES.ADMIN.DASHBOARD} element={<AdminDashboard />} />
-            <Route path={ROUTES.ADMIN.TAXPAYERS} element={<PlaceholderPage title="Contribuables" />} />
-            <Route path={ROUTES.ADMIN.DECLARATIONS} element={<PlaceholderPage title="Déclarations" />} />
-            <Route path={ROUTES.ADMIN.REVENUE} element={<PlaceholderPage title="Recettes" />} />
-            <Route path={ROUTES.ADMIN.CONTROLS} element={<PlaceholderPage title="Contrôles" />} />
-            <Route path={ROUTES.ADMIN.REPORTS} element={<PlaceholderPage title="Rapports" />} />
-            <Route path={ROUTES.ADMIN.SETTINGS} element={<PlaceholderPage title="Paramètres" />} />
-            <Route path={ROUTES.ADMIN.ROOT} element={<Navigate to={ROUTES.ADMIN.DASHBOARD} replace />} />
+          {/* Locataire routes */}
+          <Route element={<ProtectedRoute allowedRoles={["locataire"]} />}>
+            <Route element={<LocataireLayout />}>
+              <Route
+                path={ROUTES.LOCATAIRE.HOME}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocataireDashboard />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.CONTRACTS}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocataireContractsListPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.CONTRACT_DETAIL}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocataireContractDetailPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.PAYMENTS}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocatairePaymentsListPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.PAYMENT_NEW}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocatairePaymentPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.PAYMENT_SUCCESS}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocatairePaymentSuccessPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.PAYMENT_FAILED}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocatairePaymentFailedPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.RECEIPTS}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocataireReceiptsListPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.RECEIPT_DETAIL}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocataireReceiptDetailPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.NOTIFICATIONS}
+                element={<PlaceholderPage title="Notifications" />}
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.PROFILE}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LocataireProfilePage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/locataire/accueil"
+                element={<Navigate to={ROUTES.LOCATAIRE.HOME} replace />}
+              />
+              <Route
+                path={ROUTES.LOCATAIRE.ROOT}
+                element={<Navigate to={ROUTES.LOCATAIRE.HOME} replace />}
+              />
+            </Route>
           </Route>
-        </Route>
 
-        {/* Fiscal routes */}
-        <Route element={<ProtectedRoute allowedRoles={['agent_fiscal']} />}>
-          <Route element={<FiscalLayout />}>
-            <Route path={ROUTES.FISCAL.DASHBOARD} element={<FiscalDashboard />} />
-            <Route path={ROUTES.FISCAL.DECLARATIONS} element={<PlaceholderPage title="Déclarations" />} />
-            <Route path={ROUTES.FISCAL.REVENUE} element={<PlaceholderPage title="Recettes" />} />
-            <Route path={ROUTES.FISCAL.RECONCILIATION} element={<PlaceholderPage title="Rapprochements" />} />
-            <Route path={ROUTES.FISCAL.CONTROLS} element={<PlaceholderPage title="Contrôles" />} />
-            <Route path={ROUTES.FISCAL.ROOT} element={<Navigate to={ROUTES.FISCAL.DASHBOARD} replace />} />
+          {/* Admin routes */}
+          <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+            <Route element={<AdminLayout />}>
+              <Route
+                path={ROUTES.ADMIN.DASHBOARD}
+                element={<AdminDashboard />}
+              />
+              <Route
+                path={ROUTES.ADMIN.TAXPAYERS}
+                element={<PlaceholderPage title="Contribuables" />}
+              />
+              <Route
+                path={ROUTES.ADMIN.DECLARATIONS}
+                element={<PlaceholderPage title="Déclarations" />}
+              />
+              <Route
+                path={ROUTES.ADMIN.REVENUE}
+                element={<PlaceholderPage title="Recettes" />}
+              />
+              <Route
+                path={ROUTES.ADMIN.CONTROLS}
+                element={<PlaceholderPage title="Contrôles" />}
+              />
+              <Route
+                path={ROUTES.ADMIN.REPORTS}
+                element={<PlaceholderPage title="Rapports" />}
+              />
+              <Route
+                path={ROUTES.ADMIN.SETTINGS}
+                element={<PlaceholderPage title="Paramètres" />}
+              />
+              <Route
+                path={ROUTES.ADMIN.ROOT}
+                element={<Navigate to={ROUTES.ADMIN.DASHBOARD} replace />}
+              />
+            </Route>
           </Route>
-        </Route>
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* Fiscal routes */}
+          <Route element={<ProtectedRoute allowedRoles={["agent_fiscal"]} />}>
+            <Route element={<FiscalLayout />}>
+              <Route
+                path={ROUTES.FISCAL.DASHBOARD}
+                element={<FiscalDashboard />}
+              />
+              <Route
+                path={ROUTES.FISCAL.DECLARATIONS}
+                element={<PlaceholderPage title="Déclarations" />}
+              />
+              <Route
+                path={ROUTES.FISCAL.REVENUE}
+                element={<PlaceholderPage title="Recettes" />}
+              />
+              <Route
+                path={ROUTES.FISCAL.RECONCILIATION}
+                element={<PlaceholderPage title="Rapprochements" />}
+              />
+              <Route
+                path={ROUTES.FISCAL.CONTROLS}
+                element={<PlaceholderPage title="Contrôles" />}
+              />
+              <Route
+                path={ROUTES.FISCAL.ROOT}
+                element={<Navigate to={ROUTES.FISCAL.DASHBOARD} replace />}
+              />
+            </Route>
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }

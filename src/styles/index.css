@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 @import './theme.css';
 @import './print.css';
@@ -7,9 +6,31 @@
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-heading: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-hand: 'Caveat', cursive;
   --color-kinshasa-gold: #d4a843;
   --color-kinshasa-blue: #1e40af;
   --color-kinshasa-blue-light: #3b82f6;
+
+  /* DRC brand palette (landing page) */
+  --color-drc-blue: #009fe3;
+  --color-drc-blue-dark: #0086c2;
+  --color-drc-blue-ink: #0077b6;
+  --color-drc-red-ink: #d9262b;
+  --color-drc-gold-ink: #8a6e17;
+  --color-drc-yellow: #ffdd00;
+  --color-drc-red: #ef3e42;
+  --color-drc-black: #0a0a0a;
+  --color-drc-charcoal: #1a1a1a;
+  --color-drc-navy: #0a1628;
+  --color-drc-navy-light: #152238;
+  --color-drc-gray-100: #f5f7fa;
+  --color-drc-gray-200: #e5e9f0;
+  --color-drc-gray-400: #94a3b8;
+  --color-drc-gray-500: #5b6b80;
+  --color-drc-gray-600: #475569;
+  --color-drc-gold: #c9a227;
+  --color-drc-gold-light: #f5e6b8;
 }
 
 *,
