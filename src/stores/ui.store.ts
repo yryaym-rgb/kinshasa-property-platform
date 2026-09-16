@@ -1,16 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type UILanguage = 'fr' | 'en' | 'ln' | 'sw';
+
 interface UIState {
   sidebarCollapsed: boolean;
   theme: 'light' | 'dark';
-  language: 'fr' | 'en';
+  language: UILanguage;
   activeModal: string | null;
   filters: Record<string, unknown>;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setTheme: (theme: 'light' | 'dark') => void;
-  setLanguage: (language: 'fr' | 'en') => void;
+  setLanguage: (language: UILanguage) => void;
   openModal: (modalId: string) => void;
   closeModal: () => void;
   setFilter: (key: string, value: unknown) => void;

@@ -56,33 +56,93 @@
       @media (max-width:1023px){
         #lp-shell .sh-bg{inset:0 0 auto 0;height:max(calc(100svh - var(--sh-nav) - 3px),700px);mask-image:linear-gradient(to bottom,#000 58%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 58%,transparent 100%)}
       }
-    </style>
-    <!-- Kick off the landing hero (LCP) image before any JavaScript runs; only on "/". -->
-    <script>
-      if (location.pathname === '/') {
-        var heroPreload = document.createElement('link');
-        heroPreload.rel = 'preload';
-        heroPreload.as = 'image';
-        heroPreload.type = 'image/webp';
-        heroPreload.setAttribute(
-          'imagesrcset',
-          '/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w'
-        );
-        heroPreload.setAttribute('imagesizes', '100vw');
-        heroPreload.setAttribute('fetchpriority', 'high');
-        document.head.appendChild(heroPreload);
+      /* Auth shell (#auth-shell) — geometry mirrors auth.css; keep both in sync. */
+      #auth-shell{--as-navy:#0a1628;--as-topbar:72px;--as-body-top:clamp(8px,calc(50svh - 400px),120px);display:grid;grid-template-columns:minmax(0,1fr);min-height:100svh;background:#fff;font-family:Inter,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#1a1a1a}
+      #auth-shell .as-flag{display:block;height:3px;width:100%;background:linear-gradient(90deg,#009fe3 0 33.333%,#ffdd00 33.333% 66.666%,#ef3e42 66.666% 100%)}
+      #auth-shell .as-main{position:relative;display:flex;flex-direction:column;min-height:100svh}
+      #auth-shell .as-topbar{display:flex;align-items:center;justify-content:space-between;height:var(--as-topbar);padding:0 24px}
+      #auth-shell .as-brand{display:flex;align-items:center;gap:12px}
+      #auth-shell .as-brand img{display:block;width:40px;height:40px}
+      #auth-shell .as-word{font-family:Poppins,ui-sans-serif,system-ui,sans-serif;font-weight:700;font-size:18px;letter-spacing:-.02em;line-height:1}
+      #auth-shell .as-word b{font-weight:inherit;color:#0077b6}
+      #auth-shell .as-word i{font-style:normal;color:var(--as-navy)}
+      #auth-shell .as-lang{width:44px;height:32px;border-radius:8px;background:#f5f7fa}
+      #auth-shell .as-body{flex:1;display:flex;flex-direction:column;align-items:center;padding:var(--as-body-top) 24px 40px}
+      #auth-shell .as-card{width:100%;max-width:440px}
+      #auth-shell .as-title{margin:0;font-family:Poppins,ui-sans-serif,system-ui,sans-serif;font-weight:700;font-size:32px;line-height:1.15;letter-spacing:-.02em;color:var(--as-navy)}
+      #auth-shell .as-sub{margin:8px 0 0;font-size:15px;line-height:1.5;color:#475569}
+      #auth-shell .as-tabs{display:flex;gap:24px;margin-top:32px;padding-bottom:12px;border-bottom:1px solid #e5e9f0}
+      #auth-shell .as-tabs span{display:block;height:20px;width:80px;border-radius:4px;background:#f5f7fa}
+      #auth-shell .as-tabs span:first-child{background:#e8f6fc}
+      #auth-shell .as-field{height:56px;margin-top:20px;border-radius:12px;border:1.5px solid #e5e9f0;background:#fff}
+      #auth-shell .as-btn{height:56px;margin-top:20px;border-radius:12px;background:#009fe3}
+      #auth-shell .as-panel{display:none}
+      #auth-shell.as--centered{background:linear-gradient(180deg,#fff 0%,#f5f7fa 100%)}
+      #auth-shell.as--centered::before{content:'';position:absolute;inset:0 0 auto 0;height:360px;pointer-events:none;background:linear-gradient(90deg,rgba(0,159,227,.18) 0%,rgba(255,221,0,.16) 50%,rgba(239,62,66,.14) 100%);mask-image:linear-gradient(to bottom,#000 0%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 0%,transparent 100%)}
+      #auth-shell.as--centered .as-card{padding:32px 24px;border-radius:20px;background:#fff;border:1px solid #e5e9f0;box-shadow:0 1px 2px rgba(10,22,40,.04),0 12px 32px rgba(10,22,40,.08),0 32px 64px -24px rgba(10,22,40,.14);min-height:420px;box-sizing:border-box}
+      #auth-shell.as--centered .as-badge{width:64px;height:64px;margin:0 auto 24px;border-radius:999px;background:#009fe3;flex-shrink:0}
+      #auth-shell.as--centered .as-badge--yellow{background:#ffdd00}
+      #auth-shell.as--centered .as-title,#auth-shell.as--centered .as-sub{text-align:center}
+      #auth-shell .as-back{height:32px;margin-bottom:8px}
+      #auth-shell .as-otp{display:flex;justify-content:center;gap:12px;margin-top:32px}
+      #auth-shell .as-otp span{width:44px;height:56px;border-radius:12px;border:2px solid #e5e9f0;background:#fff}
+      @media (min-width:640px){#auth-shell .as-otp span{width:52px;height:64px}}
+      @media (min-width:768px){#auth-shell .as-topbar{padding:0 40px}#auth-shell.as--centered .as-card{padding:40px;max-width:500px}}
+      @media (min-width:1024px){
+        #auth-shell.as--split{grid-template-columns:55fr 45fr}
+        #auth-shell.as--split .as-panel{position:relative;display:flex;flex-direction:column;justify-content:center;min-height:100svh;padding:clamp(48px,7vh,80px) clamp(48px,5.5vw,80px);background:var(--as-navy);color:#fff;isolation:isolate;overflow:hidden}
+        #auth-shell.as--split .as-panel__bg{position:absolute;inset:0;z-index:-2}
+        #auth-shell.as--split .as-panel__bg img{width:100%;height:100%;object-fit:cover;object-position:62% 40%}
+        #auth-shell.as--split .as-panel__overlay{position:absolute;inset:0;z-index:-1;background:linear-gradient(135deg,rgba(10,22,40,.92) 0%,rgba(10,22,40,.75) 100%)}
+        #auth-shell.as--split .as-panel__head{margin:60px 0 0;font-family:Poppins,ui-sans-serif,system-ui,sans-serif;font-weight:700;font-size:clamp(36px,3.4vw,48px);line-height:1.1;letter-spacing:-.02em;color:#fff}
+        #auth-shell.as--split .as-topbar .as-brand{display:none}
+        #auth-shell.as--split .as-topbar{justify-content:flex-end}
       }
+    </style>
+    <!-- Kick off route-critical images before any JavaScript runs. -->
+    <script>
+      (function () {
+        var path = location.pathname.replace(/\/+$/, '') || '/';
+        if (path === '/') {
+          var heroPreload = document.createElement('link');
+          heroPreload.rel = 'preload';
+          heroPreload.as = 'image';
+          heroPreload.type = 'image/webp';
+          heroPreload.setAttribute(
+            'imagesrcset',
+            '/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w'
+          );
+          heroPreload.setAttribute('imagesizes', '100vw');
+          heroPreload.setAttribute('fetchpriority', 'high');
+          document.head.appendChild(heroPreload);
+        }
+        if (path === '/login' || path === '/register') {
+          var logo = document.createElement('link');
+          logo.rel = 'preload';
+          logo.as = 'image';
+          logo.href = '/landing/logo-kinshasa.png';
+          document.head.appendChild(logo);
+          if (window.matchMedia('(min-width: 1024px)').matches) {
+            var panel = document.createElement('link');
+            panel.rel = 'preload';
+            panel.as = 'image';
+            panel.type = 'image/webp';
+            panel.href = '/landing/hero-kinshasa-1024.webp';
+            panel.setAttribute('fetchpriority', 'high');
+            document.head.appendChild(panel);
+          }
+        }
+      })();
     </script>
     <title>eLoyer Kinshasa</title>
   </head>
   <body>
     <div id="root">
       <!--
-        Static app shell for "/": paints the branded frame (navbar identity + hero
-        backdrop) straight from the HTML, long before JavaScript. React replaces the
-        whole subtree atomically on its first commit, so there is no flash and no
-        layout shift. Geometry mirrors Navbar/Hero exactly.
+        Landing shell lives in <template> so its hero image is never fetched on
+        auth routes (images inside <template> do not load until cloned).
       -->
+      <template id="lp-shell-tpl">
       <div id="lp-shell" aria-hidden="true">
         <header class="sh-nav">
           <div class="sh-wrap">
@@ -120,12 +180,112 @@
           <div class="sh-glow"></div>
         </section>
       </div>
+      </template>
+      <!--
+        Static app shell for auth routes: paints the branded frame (top bar + card
+        skeleton, and on desktop login/register the left photo panel) straight from
+        HTML. React replaces the whole #root subtree on its first commit.
+      -->
+      <div id="auth-shell" hidden>
+        <div class="as-main">
+          <span class="as-flag"></span>
+          <header class="as-topbar">
+            <span class="as-brand">
+              <img src="/landing/logo-kinshasa.png" alt="" width="40" height="40" />
+              <span class="as-word" aria-hidden="true"><b>eLoyer</b> <i>Kinshasa</i></span>
+            </span>
+            <span class="as-lang" aria-hidden="true"></span>
+          </header>
+          <main class="as-body">
+            <div class="as-card">
+              <div class="as-back" hidden aria-hidden="true"></div>
+              <div class="as-badge" hidden aria-hidden="true"></div>
+              <h1 class="as-title">Se connecter</h1>
+              <p class="as-sub">Accédez à votre espace personnel</p>
+              <div class="as-tabs" hidden aria-hidden="true"><span></span><span></span></div>
+              <div class="as-otp" hidden aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <div class="as-fields">
+                <div class="as-field" aria-hidden="true"></div>
+                <div class="as-field" aria-hidden="true"></div>
+              </div>
+              <div class="as-btn" aria-hidden="true"></div>
+            </div>
+          </main>
+        </div>
+      </div>
     </div>
     <script>
-      if (location.pathname !== '/') {
-        var shell = document.getElementById('lp-shell');
-        if (shell) shell.remove();
-      }
+      (function () {
+        var path = location.pathname.replace(/\/+$/, '') || '/';
+        var authPaths = ['/login', '/register', '/verify', '/forgot-password', '/reset-password'];
+        var isLanding = path === '/';
+        var isAuth = authPaths.indexOf(path) !== -1;
+        var isSplit = path === '/login' || path === '/register';
+        var root = document.getElementById('root');
+
+        if (isLanding && root) {
+          var tpl = document.getElementById('lp-shell-tpl');
+          if (tpl && tpl.content) root.appendChild(tpl.content.cloneNode(true));
+        }
+
+        if (!isAuth) {
+          var auth = document.getElementById('auth-shell');
+          if (auth) auth.remove();
+          return;
+        }
+
+        var shell = document.getElementById('auth-shell');
+        if (!shell) return;
+        shell.hidden = false;
+        shell.removeAttribute('aria-hidden');
+        shell.className += isSplit ? ' as--split' : ' as--centered';
+
+        var title = shell.querySelector('.as-title');
+        var sub = shell.querySelector('.as-sub');
+        var badge = shell.querySelector('.as-badge');
+        var back = shell.querySelector('.as-back');
+        var otp = shell.querySelector('.as-otp');
+        var tabs = shell.querySelector('.as-tabs');
+        var fields = shell.querySelector('.as-fields');
+        var btn = shell.querySelector('.as-btn');
+
+        if (isSplit && window.matchMedia('(min-width: 1024px)').matches) {
+          var aside = document.createElement('aside');
+          aside.className = 'as-panel';
+          aside.innerHTML =
+            '<div class="as-panel__bg"><picture><source srcset="/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w" sizes="55vw" type="image/webp" /><img src="/landing/hero-kinshasa.jpg" alt="" width="1600" height="1067" fetchpriority="high" decoding="sync" elementtiming="auth-shell-panel" /></picture></div><div class="as-panel__overlay"></div><p class="as-panel__head">Bienvenue sur eLoyer Kinshasa</p>';
+          shell.insertBefore(aside, shell.firstChild);
+        }
+        if (!isSplit && badge) badge.hidden = false;
+
+        if (path === '/verify') {
+          if (title) title.textContent = 'Vérifiez votre numéro';
+          if (sub) sub.textContent = 'Nous avons envoyé un code à 6 chiffres au';
+          if (otp) otp.hidden = false;
+          if (fields) fields.style.display = 'none';
+          if (btn) btn.style.display = 'none';
+        } else if (path === '/forgot-password') {
+          if (back) back.hidden = false;
+          if (badge) badge.className = 'as-badge as-badge--yellow';
+          if (title) title.textContent = 'Mot de passe oublié ?';
+          if (sub) sub.textContent = 'Entrez votre numéro de téléphone ou votre email.';
+          if (fields) fields.querySelector('.as-field:last-child').style.display = 'none';
+        } else if (path === '/reset-password') {
+          if (badge) badge.hidden = false;
+          if (title) title.textContent = 'Nouveau mot de passe';
+          if (sub) sub.textContent = 'Choisissez un nouveau mot de passe fort.';
+        } else if (path === '/register') {
+          if (title) title.textContent = 'Je suis…';
+          if (sub) sub.textContent = 'Sélectionnez votre profil pour continuer.';
+          if (tabs) tabs.hidden = true;
+          if (fields) fields.style.display = 'none';
+          if (btn) btn.style.marginTop = '32px';
+        } else if (path === '/login') {
+          if (tabs) tabs.hidden = false;
+        }
+      })();
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

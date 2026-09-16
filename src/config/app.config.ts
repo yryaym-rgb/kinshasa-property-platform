@@ -95,8 +95,20 @@ export const MOBILE_MONEY_PROVIDERS = (
 
 export const OTP_CONFIG = {
   length: 6,
-  resendDelaySeconds: 60,
+  resendDelaySeconds: 45,
   expirySeconds: 300,
+  maxVerifyAttempts: 3,
+} as const;
+
+export const AUTH_CONFIG = {
+  /** Minutes of inactivity before a non-remembered session is signed out. */
+  inactivityTimeoutMinutes: 30,
+  /** Support line shown on the OTP page. */
+  supportPhone: '+243 81 000 0000',
+  /** Supabase Storage bucket receiving identity documents at sign-up. */
+  kycBucket: 'kyc-documents',
+  maxDocumentBytes: 5 * 1024 * 1024,
+  acceptedDocumentTypes: ['image/jpeg', 'image/png', 'application/pdf'],
 } as const;
 
 export const PAGINATION = {

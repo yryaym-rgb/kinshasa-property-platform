@@ -291,6 +291,152 @@ export function SparkIcon(props: IconProps) {
   );
 }
 
+export function ArrowLeftIcon(props: IconProps) {
+  return (
+    <Base strokeWidth={2} {...props}>
+      <path d="M19.5 12h-15M11 5.5 4.5 12l6.5 6.5" />
+    </Base>
+  );
+}
+
+export function EyeIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </Base>
+  );
+}
+
+export function EyeOffIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M3.5 3.5 20.5 20.5" />
+      <path d="M10.6 5.8A10.3 10.3 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 3.9" />
+      <path d="M6.7 6.7C4 8.6 2.5 12 2.5 12s3.5 6.5 9.5 6.5c1.5 0 2.8-.4 4-1" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </Base>
+  );
+}
+
+export function MailIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <rect x="3" y="5.5" width="18" height="13" rx="2.5" />
+      <path d="m3.5 7.5 8.5 6 8.5-6" />
+    </Base>
+  );
+}
+
+export function AtIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="3.5" />
+      <path d="M15.5 12v1.5a2 2 0 0 0 4 0V12a7.5 7.5 0 1 0-3 6" />
+    </Base>
+  );
+}
+
+export function PhoneIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M5.5 4.5h3l1.5 4-2 1.5a9.5 9.5 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15.5 15.5 0 0 1 3.5 6.5a2 2 0 0 1 2-2z" />
+    </Base>
+  );
+}
+
+export function MapPinIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 21.5s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+      <circle cx="12" cy="10.5" r="2.5" />
+    </Base>
+  );
+}
+
+export function KeyIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="8" cy="15" r="4.5" />
+      <path d="m11.2 11.8 8.3-8.3M16.5 6.5l2.5 2.5M14 9l2.5 2.5" />
+    </Base>
+  );
+}
+
+export function UploadIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 16V4.5M7.5 9 12 4.5 16.5 9" />
+      <path d="M4.5 15.5v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3" />
+    </Base>
+  );
+}
+
+export function ImageIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+      <circle cx="9" cy="9.5" r="1.5" />
+      <path d="m3.5 17 5-4.5 3.5 3 3.5-3.5 5 5" />
+    </Base>
+  );
+}
+
+export function MessageIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M4 5.5h16v10.5h-9.5L6 19.5v-3.5H4z" />
+      <path d="M8 9.5h8M8 12.5h5" />
+    </Base>
+  );
+}
+
+export function AlertCircleIcon(props: IconProps) {
+  return (
+    <Base strokeWidth={2} {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 8v4.5M12 15.8v.2" />
+    </Base>
+  );
+}
+
+export function InfoIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 11v5M12 8v.2" />
+    </Base>
+  );
+}
+
+export function RefreshIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M20 12a8 8 0 0 1-13.7 5.6M4 12a8 8 0 0 1 13.7-5.6" />
+      <path d="M17.5 3v3.5H14M6.5 21v-3.5H10" />
+    </Base>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M4.5 6.5h15M9.5 6.5v-2h5v2M6.5 6.5l.8 13a1 1 0 0 0 1 1h7.4a1 1 0 0 0 1-1l.8-13" />
+    </Base>
+  );
+}
+
+export function GoogleIcon({ size = 20, className }: { size?: number; className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" focusable="false">
+      <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.1 3.5-8.8z" />
+      <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3a7.2 7.2 0 0 1-10.7-3.8H1.4v3.1A12 12 0 0 0 12 24z" />
+      <path fill="#FBBC05" d="M5.4 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.4a12 12 0 0 0 0 10.8l4-3.1z" />
+      <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.4 6.6l4 3.1A7.2 7.2 0 0 1 12 4.8z" />
+    </svg>
+  );
+}
+
 /* ── Social ──────────────────────────────────────────────────── */
 
 export function FacebookIcon(props: IconProps) {

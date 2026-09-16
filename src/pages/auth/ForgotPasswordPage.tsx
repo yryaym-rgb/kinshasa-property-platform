@@ -1,117 +1,255 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { PhoneInput } from '@/components/ui/PhoneInput';
-import { sendPasswordResetOTP, resetPassword } from '@/services/auth.service';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useCountdown, useLockout } from '@/hooks/useLockout';
+import { useT } from '@/i18n';
+import { OTP_CONFIG } from '@/config/app.config';
 import { ROUTES } from '@/config/routes';
-import { toastError, toastSuccess } from '@/components/ui/Toast';
+import { formatCountdown, formatRemaining } from '@/lib/authRateLimit';
+import { formatE164ForDisplay, toE164 } from '@/lib/phone';
+import { cn } from '@/lib/cn';
+import { emailSchema, phoneDigitsSchema, validate, type FieldErrors } from '@/validations/authSchemas';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import { AuthCard, AuthCardHeader } from '@/components/auth/AuthCard';
+import { PhoneInput } from '@/components/auth/PhoneInput';
+import { SuccessMark } from '@/components/auth/SuccessMark';
+import { TrustFooter } from '@/components/auth/TrustFooter';
+import { Alert, AuthButton, Tabs, TextField, useShake } from '@/components/auth/primitives';
+import { useAuthErrorMessage } from '@/components/auth/useAuthError';
+import { authToast } from '@/components/auth/toast';
+import { ArrowLeftIcon, ArrowRightIcon, AtIcon, KeyIcon, PhoneIcon } from '@/components/landing/icons';
 
-const schema = z.object({
-  contact: z.string().min(1, 'Champ requis'),
-  method: z.enum(['phone', 'email']),
-});
-
-type FormData = z.infer<typeof schema>;
+type Method = 'phone' | 'email';
+type Field = 'phone' | 'email';
 
 export function ForgotPasswordPage() {
-  const [sent, setSent] = useState(false);
-  const [method, setMethod] = useState<'phone' | 'email'>('phone');
-  const [loading, setLoading] = useState(false);
+  const t = useT();
+  const navigate = useNavigate();
+  const { requestPasswordReset } = useAuth();
+  const describeError = useAuthErrorMessage();
+  const resetLock = useLockout('password-reset');
+  const countdown = useCountdown(OTP_CONFIG.resendDelaySeconds, false);
+  const [shakeProps, shake] = useShake();
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { method: 'phone' },
-  });
+  const [method, setMethod] = useState<Method>('phone');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [errors, setErrors] = useState<FieldErrors<Field>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
+  /** Identifier (E.164 or email) the request was sent to; non-null means success state. */
+  const [sentTo, setSentTo] = useState<{ method: Method; target: string } | null>(null);
+  const identifierRef = useRef<HTMLInputElement>(null);
+  const firstRender = useRef(true);
 
-  const contact = watch('contact');
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    identifierRef.current?.focus();
+    setErrors({});
+    setFormError(null);
+  }, [method]);
 
-  const onSubmit = async (data: FormData) => {
-    setLoading(true);
+  const send = async (): Promise<boolean> => {
+    if (method === 'phone') {
+      await requestPasswordReset({ method, phone: toE164(phone) });
+    } else {
+      await requestPasswordReset({ method, email: email.trim() });
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (submitting || resetLock.locked) return;
+    setFormError(null);
+
+    const result =
+      method === 'phone' ? validate(phoneDigitsSchema, phone) : validate(emailSchema, email);
+    if (!result.success) {
+      setErrors({ [method]: method === 'phone' ? 'login.error.phone' : 'login.error.email' });
+      identifierRef.current?.focus();
+      shake();
+      return;
+    }
+    setErrors({});
+
+    setSubmitting(true);
     try {
-      if (data.method === 'phone') {
-        await sendPasswordResetOTP(data.contact);
-      } else {
-        await resetPassword(data.contact);
-      }
-      setSent(true);
-      toastSuccess('Instructions de réinitialisation envoyées');
-    } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Erreur d\'envoi');
+      await send();
+      setSentTo({ method, target: method === 'phone' ? toE164(phone) : email.trim() });
+      countdown.restart();
+    } catch (error) {
+      setFormError(describeError(error, { lockKey: 'password-reset' }));
+      shake();
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  if (sent) {
+  const handleResend = async () => {
+    if (!countdown.done || resending || resetLock.locked) return;
+    setResending(true);
+    try {
+      await send();
+      countdown.restart();
+      authToast(t('otp.resent'));
+    } catch (error) {
+      authToast(describeError(error, { lockKey: 'password-reset' }), 'info');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const backLink = (
+    <Link to={ROUTES.LOGIN} className="auth-back">
+      <ArrowLeftIcon size={16} />
+      {t('forgot.back')}
+    </Link>
+  );
+
+  if (sentTo) {
+    const displayTarget = sentTo.method === 'phone' ? formatE164ForDisplay(sentTo.target) : sentTo.target;
     return (
-      <div className="animate-fade-in text-center">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-          <CheckCircle className="h-8 w-8 text-green-600" />
-        </div>
-        <h1 className="font-heading text-2xl font-bold">Vérifiez vos messages</h1>
-        <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
-          Nous avons envoyé les instructions de réinitialisation. Suivez le lien ou entrez le code OTP reçu.
-        </p>
-        <Link to={ROUTES.LOGIN} className="mt-6 inline-block">
-          <Button variant="outline">Retour à la connexion</Button>
-        </Link>
-      </div>
+      <AuthLayout title={t('forgot.pageTitle')} variant="centered">
+        <AuthCard>
+          <SuccessMark
+            title={sentTo.method === 'phone' ? t('forgot.success.phone') : t('forgot.success.email')}
+            description={
+              sentTo.method === 'phone'
+                ? t('forgot.success.sub.phone', { target: displayTarget })
+                : t('forgot.success.sub.email', { target: displayTarget })
+            }
+          >
+            <div className="mt-8 flex flex-col gap-3">
+              {sentTo.method === 'phone' ? (
+                <AuthButton
+                  icon={<ArrowRightIcon size={18} />}
+                  iconPosition="right"
+                  arrow
+                  onClick={() => navigate(`${ROUTES.VERIFY}?phone=${encodeURIComponent(sentTo.target)}`)}
+                >
+                  {t('forgot.success.enterCode')}
+                </AuthButton>
+              ) : null}
+
+              <button
+                type="button"
+                className="auth-link text-[14px] disabled:cursor-default disabled:text-drc-gray-400 disabled:no-underline"
+                onClick={() => void handleResend()}
+                disabled={!countdown.done || resending || resetLock.locked}
+              >
+                {resetLock.locked
+                  ? t('common.error.tooMany', { duration: formatRemaining(resetLock.remainingMs) })
+                  : countdown.done
+                    ? t('otp.resend')
+                    : t('otp.resendIn', { time: formatCountdown(countdown.remaining) })}
+              </button>
+            </div>
+
+            <div className="mt-8 flex justify-center">{backLink}</div>
+          </SuccessMark>
+        </AuthCard>
+        <TrustFooter />
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="animate-fade-in">
-      <h1 className="font-heading text-2xl font-bold">Mot de passe oublié</h1>
-      <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
-        Entrez votre numéro de téléphone ou email pour recevoir un code de réinitialisation.
-      </p>
+    <AuthLayout title={t('forgot.pageTitle')} variant="centered">
+      <AuthCard>
+        <div className="mb-6">{backLink}</div>
 
-      <div className="my-6 flex rounded-lg border border-[var(--color-border)] p-1">
-        {(['phone', 'email'] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => { setMethod(m); setValue('method', m); }}
-            className={`flex-1 rounded-md py-2 text-sm font-medium ${
-              method === m ? 'bg-[var(--color-primary)] text-white' : 'text-[var(--color-muted-foreground)]'
-            }`}
+        <AuthCardHeader
+          align="center"
+          size="md"
+          badge={<KeyIcon size={28} />}
+          badgeTone="yellow"
+          title={t('forgot.title')}
+          subtitle={t('forgot.sub')}
+        />
+
+        <div className="auth-enter">
+          <div className="mt-8">
+            <Tabs<Method>
+              label={t('forgot.title')}
+              value={method}
+              onChange={setMethod}
+              idPrefix="forgot-tab"
+              tabs={[
+                { id: 'phone', label: t('login.tab.phone'), icon: <PhoneIcon size={18} /> },
+                { id: 'email', label: t('login.tab.email'), icon: <AtIcon size={18} /> },
+              ]}
+            />
+          </div>
+
+          <form
+            id={`forgot-tab-panel-${method}`}
+            role="tabpanel"
+            aria-labelledby={`forgot-tab-${method}`}
+            className={cn('auth-form mt-6', shakeProps.className)}
+            onAnimationEnd={shakeProps.onAnimationEnd}
+            onSubmit={(e) => void handleSubmit(e)}
+            noValidate
           >
-            {m === 'phone' ? 'Téléphone' : 'Email'}
-          </button>
-        ))}
-      </div>
+            {method === 'phone' ? (
+              <PhoneInput
+                key="phone"
+                ref={identifierRef}
+                id="forgot-phone"
+                value={phone}
+                onChange={setPhone}
+                error={errors.phone ? t(errors.phone) : undefined}
+                help={t('forgot.help.phone')}
+                autoFocus
+                required
+              />
+            ) : (
+              <TextField
+                key="email"
+                ref={identifierRef}
+                id="forgot-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="off"
+                label={t('login.email.label')}
+                placeholder={t('login.email.placeholder')}
+                icon={<AtIcon size={20} />}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                error={errors.email ? t(errors.email) : undefined}
+                help={t('forgot.help.email')}
+                autoFocus
+                required
+              />
+            )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <input type="hidden" {...register('method')} />
-        {method === 'phone' ? (
-          <PhoneInput
-            value={contact}
-            onChange={(val) => setValue('contact', val)}
-            error={errors.contact?.message}
-          />
-        ) : (
-          <Input
-            type="email"
-            label="Adresse email"
-            {...register('contact')}
-            error={errors.contact?.message}
-          />
-        )}
-        <Button type="submit" className="w-full" loading={loading}>
-          Envoyer le code
-        </Button>
-      </form>
+            {formError ? (
+              <Alert>{formError}</Alert>
+            ) : resetLock.locked ? (
+              <Alert tone="warn">{t('common.error.tooMany', { duration: formatRemaining(resetLock.remainingMs) })}</Alert>
+            ) : null}
 
-      <p className="mt-6 text-center text-sm">
-        <Link to={ROUTES.LOGIN} className="text-[var(--color-primary)] hover:underline">
-          Retour à la connexion
-        </Link>
-      </p>
-    </div>
+            <AuthButton
+              type="submit"
+              loading={submitting}
+              loadingLabel={t('forgot.submitting')}
+              disabled={resetLock.locked}
+              icon={<ArrowRightIcon size={18} />}
+              iconPosition="right"
+              arrow
+            >
+              {t('forgot.submit')}
+            </AuthButton>
+          </form>
+
+          <TrustFooter />
+        </div>
+      </AuthCard>
+    </AuthLayout>
   );
 }
