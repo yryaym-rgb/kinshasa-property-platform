@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { sessionStorageAdapter } from '@/lib/authStorage';
 import type { Database } from '@/types/database.types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -147,7 +148,8 @@ export const supabase: TypedSupabaseClient = createClient<Database>(supabaseUrl,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    // "Se souvenir de moi" decides between localStorage and sessionStorage.
+    storage: typeof window !== 'undefined' ? sessionStorageAdapter : undefined,
   },
   global: {
     fetch: async (url, options) => {

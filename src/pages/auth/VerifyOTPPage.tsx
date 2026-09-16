@@ -1,153 +1,177 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { Shield, Lock } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/Button';
-import { OTP_CONFIG } from '@/config/app.config';
+import { useCountdown, useLockout } from '@/hooks/useLockout';
+import { useT } from '@/i18n';
+import { AUTH_CONFIG, OTP_CONFIG } from '@/config/app.config';
 import { ROUTES } from '@/config/routes';
-import { toastError } from '@/components/ui/Toast';
-import { cn } from '@/lib/utils';
+import { formatCountdown, formatRemaining } from '@/lib/authRateLimit';
+import { getPendingFlow } from '@/lib/authStorage';
+import { formatE164ForDisplay } from '@/lib/phone';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import { AuthCard, AuthCardHeader } from '@/components/auth/AuthCard';
+import { OTPInput } from '@/components/auth/OTPInput';
+import { SuccessMark } from '@/components/auth/SuccessMark';
+import { TrustFooter } from '@/components/auth/TrustFooter';
+import { Alert } from '@/components/auth/primitives';
+import { useAuthErrorMessage } from '@/components/auth/useAuthError';
+import { authToast } from '@/components/auth/toast';
+import { MessageIcon } from '@/components/landing/icons';
+
+type Status = 'idle' | 'verifying' | 'error' | 'success';
+
+const SUCCESS_REDIRECT_MS = 1200;
 
 export function VerifyOTPPage() {
+  const t = useT();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const phone = searchParams.get('phone') ?? '';
-  const { verifyOTPCode, loginWithOTP, loading } = useAuth();
-  const [digits, setDigits] = useState<string[]>(Array(OTP_CONFIG.length).fill(''));
-  const [countdown, setCountdown] = useState<number>(OTP_CONFIG.resendDelaySeconds);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const { verifyCode, resendCode } = useAuth();
+  const describeError = useAuthErrorMessage();
+  const verifyLock = useLockout('otp-verify');
+  const sendLock = useLockout('otp-send');
+  const countdown = useCountdown(OTP_CONFIG.resendDelaySeconds);
 
-  useEffect(() => {
-    if (countdown <= 0) return;
-    const timer = setInterval(() => setCountdown((c) => c - 1), 1000);
-    return () => clearInterval(timer);
-  }, [countdown]);
+  const pending = getPendingFlow();
+  const phone = searchParams.get('phone') ?? pending?.phone ?? '';
+  const backTo = pending?.type === 'register' ? ROUTES.REGISTER : pending?.type === 'reset' ? ROUTES.FORGOT_PASSWORD : ROUTES.LOGIN;
 
-  const submitOTP = useCallback(async (code: string) => {
-    if (!phone) {
-      toastError('Numéro de téléphone manquant');
-      return;
-    }
-    try {
-      await verifyOTPCode(phone, code);
-    } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Code invalide');
-      setDigits(Array(OTP_CONFIG.length).fill(''));
-      inputRefs.current[0]?.focus();
-    }
-  }, [phone, verifyOTPCode]);
+  const [code, setCode] = useState('');
+  const [status, setStatus] = useState<Status>('idle');
+  const [error, setError] = useState<string | null>(null);
+  const [shakeKey, setShakeKey] = useState(0);
+  const [resending, setResending] = useState(false);
+  const redirectTimer = useRef<number | undefined>(undefined);
 
-  useEffect(() => {
-    const code = digits.join('');
-    if (code.length === OTP_CONFIG.length && digits.every(Boolean)) {
-      void submitOTP(code);
-    }
-  }, [digits, submitOTP]);
+  useEffect(() => () => window.clearTimeout(redirectTimer.current), []);
 
-  const handleChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    const newDigits = [...digits];
-    newDigits[index] = value.slice(-1);
-    setDigits(newDigits);
-    if (value && index < OTP_CONFIG.length - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_CONFIG.length);
-    const newDigits = [...digits];
-    pasted.split('').forEach((char, i) => { newDigits[i] = char; });
-    setDigits(newDigits);
-  };
+  const handleComplete = useCallback(
+    async (value: string) => {
+      if (status === 'verifying' || status === 'success' || verifyLock.locked) return;
+      setStatus('verifying');
+      setError(null);
+      try {
+        const { redirectTo } = await verifyCode(phone, value);
+        setStatus('success');
+        redirectTimer.current = window.setTimeout(() => navigate(redirectTo, { replace: true }), SUCCESS_REDIRECT_MS);
+      } catch (err) {
+        setStatus('error');
+        setCode('');
+        setShakeKey((k) => k + 1);
+        const locked = verifyLock.locked || /rate_limited/.test((err as { code?: string })?.code ?? '');
+        setError(locked ? t('otp.error.locked') : describeError(err, { invalidKey: 'otp.error.incorrect', lockKey: 'otp-verify' }));
+      }
+    },
+    [status, verifyLock.locked, verifyCode, phone, navigate, t, describeError],
+  );
 
   const handleResend = async () => {
-    if (countdown > 0 || !phone) return;
+    if (!countdown.done || sendLock.locked || resending) return;
+    setResending(true);
+    setError(null);
     try {
-      await loginWithOTP(phone);
-      setCountdown(OTP_CONFIG.resendDelaySeconds);
+      await resendCode(phone);
+      countdown.restart();
+      setStatus('idle');
+      setCode('');
+      authToast(t('otp.resent'));
     } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Erreur de renvoi');
+      setError(describeError(err, { lockKey: 'otp-send' }));
+    } finally {
+      setResending(false);
     }
   };
 
-  const formatCountdown = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  };
+  if (!phone) {
+    return <Navigate to={ROUTES.LOGIN} replace />;
+  }
+
+  const locked = verifyLock.locked;
+  const inputStatus = status === 'error' ? 'error' : status === 'success' ? 'success' : 'idle';
 
   return (
-    <div className="animate-fade-in text-center">
-      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-accent)]">
-        <Shield className="h-8 w-8 text-[var(--color-primary)]" />
-      </div>
-
-      <h1 className="font-heading text-2xl font-bold">Vérification OTP</h1>
-      <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
-        Entrez le code à 6 chiffres envoyé au{' '}
-        <span className="font-medium text-[var(--color-foreground)]">{phone}</span>
-      </p>
-
-      <div className="mt-8 flex justify-center gap-2" onPaste={handlePaste}>
-        {digits.map((digit, index) => (
-          <input
-            key={index}
-            ref={(el) => { inputRefs.current[index] = el; }}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={digit}
-            onChange={(e) => handleChange(index, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(index, e)}
-            className={cn(
-              'h-12 w-10 rounded-lg border-2 text-center text-lg font-bold',
-              'border-[var(--color-input)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]',
-              digit && 'border-[var(--color-primary)]',
-            )}
-            aria-label={`Chiffre ${index + 1}`}
-            autoFocus={index === 0}
-          />
-        ))}
-      </div>
-
-      <Button
-        className="mt-6 w-full"
-        loading={loading}
-        onClick={() => void submitOTP(digits.join(''))}
-        disabled={digits.some((d) => !d)}
-      >
-        Vérifier
-      </Button>
-
-      <p className="mt-4 text-sm text-[var(--color-muted-foreground)]">
-        {countdown > 0 ? (
-          <>Renvoyer le code ({formatCountdown(countdown)})</>
+    <AuthLayout title={t('otp.pageTitle')} variant="centered">
+      <AuthCard>
+        {status === 'success' ? (
+          <SuccessMark title={t('otp.success')} description={t('otp.success.sub')} />
         ) : (
-          <button
-            type="button"
-            onClick={() => void handleResend()}
-            className="font-medium text-[var(--color-primary)] hover:underline"
-          >
-            Renvoyer le code
-          </button>
+          <div className="auth-enter">
+            <AuthCardHeader
+              align="center"
+              size="md"
+              badge={<MessageIcon size={28} />}
+              title={t('otp.title')}
+              subtitle={t('otp.sub')}
+            >
+              <p className="auth-phone-display">{formatE164ForDisplay(phone)}</p>
+              <Link to={backTo} className="auth-link auth-link--muted mt-2 inline-block text-[13px]">
+                {t('otp.changeNumber')}
+              </Link>
+            </AuthCardHeader>
+
+            <div className="mt-8">
+              <OTPInput
+                value={code}
+                onChange={(next) => {
+                  setCode(next);
+                  if (status === 'error') setStatus('idle');
+                }}
+                onComplete={(value) => void handleComplete(value)}
+                status={inputStatus}
+                disabled={locked || status === 'verifying'}
+                shakeKey={shakeKey}
+                autoFocus
+              />
+            </div>
+
+            {/* Fixed-height status region: spinner, error or lock notice — no layout shift. */}
+            <div className="mt-5 min-h-[52px]" aria-live="polite" aria-atomic="true">
+              {status === 'verifying' ? (
+                <p className="auth-muted flex items-center justify-center gap-2">
+                  <span className="auth-spinner border-drc-gray-200 text-drc-blue-ink" aria-hidden="true" />
+                  {t('otp.verifying')}
+                </p>
+              ) : locked ? (
+                <Alert tone="warn">
+                  {t('otp.error.locked')} {t('common.error.tooMany', { duration: formatRemaining(verifyLock.remainingMs) })}
+                </Alert>
+              ) : error ? (
+                <Alert>{error}</Alert>
+              ) : null}
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="auth-muted">{t('otp.notReceived')}</p>
+              <button
+                type="button"
+                className="auth-link mt-1 text-[14px] disabled:cursor-default disabled:text-drc-gray-400 disabled:no-underline"
+                onClick={() => void handleResend()}
+                disabled={!countdown.done || sendLock.locked || resending}
+                aria-disabled={!countdown.done || sendLock.locked}
+              >
+                {sendLock.locked
+                  ? t('otp.error.smsLimit', { duration: formatRemaining(sendLock.remainingMs) })
+                  : countdown.done
+                    ? t('otp.resend')
+                    : t('otp.resendIn', { time: formatCountdown(countdown.remaining) })}
+              </button>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px]">
+              <button
+                type="button"
+                className="auth-link auth-link--muted"
+                onClick={() => authToast(t('otp.callUnavailable'), 'info')}
+              >
+                {t('otp.viaCall')}
+              </button>
+            </div>
+
+            <p className="auth-small mt-8 text-center">{t('otp.help', { phone: AUTH_CONFIG.supportPhone })}</p>
+          </div>
         )}
-      </p>
-
-      <div className="mt-8 flex items-center justify-center gap-2 text-xs text-[var(--color-muted-foreground)]">
-        <Lock className="h-4 w-4" />
-        <span>Authentification sécurisée à deux facteurs</span>
-      </div>
-
-      <Link to={ROUTES.LOGIN} className="mt-4 inline-block text-sm text-[var(--color-primary)] hover:underline">
-        Retour à la connexion
-      </Link>
-    </div>
+      </AuthCard>
+      <TrustFooter />
+    </AuthLayout>
   );
 }

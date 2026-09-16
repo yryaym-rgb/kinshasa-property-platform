@@ -6,6 +6,7 @@ export const ROUTES = {
   REGISTER: '/register',
   VERIFY: '/verify',
   FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
   UNAUTHORIZED: '/unauthorized',
 
   BAILLEUR: {
@@ -77,6 +78,7 @@ export const PUBLIC_ROUTES: RouteGuardConfig[] = [
   { path: ROUTES.REGISTER, requireAuth: false },
   { path: ROUTES.VERIFY, requireAuth: false },
   { path: ROUTES.FORGOT_PASSWORD, requireAuth: false },
+  { path: ROUTES.RESET_PASSWORD, requireAuth: false },
 ];
 
 export const PROTECTED_ROUTES: RouteGuardConfig[] = [

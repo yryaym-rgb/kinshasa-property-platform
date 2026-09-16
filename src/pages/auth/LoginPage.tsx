@@ -1,136 +1,276 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Eye, EyeOff } from 'lucide-react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { PhoneInput } from '@/components/ui/PhoneInput';
-import { ROUTES } from '@/config/routes';
-import { toastError } from '@/components/ui/Toast';
+import { useLockout } from '@/hooks/useLockout';
+import { useT } from '@/i18n';
+import { ROUTES, getDashboardPathForRole } from '@/config/routes';
+import { formatRemaining } from '@/lib/authRateLimit';
+import { toE164 } from '@/lib/phone';
+import { cn } from '@/lib/cn';
+import { loginEmailSchema, loginPhoneSchema, phoneDigitsSchema, validate, type FieldErrors } from '@/validations/authSchemas';
+import { AuthLayout, type AuthPanelProps } from '@/components/auth/AuthLayout';
+import { AuthCard, AuthCardHeader } from '@/components/auth/AuthCard';
+import { PhoneInput } from '@/components/auth/PhoneInput';
+import { PasswordInput } from '@/components/auth/PasswordInput';
+import { TrustFooter } from '@/components/auth/TrustFooter';
+import { Alert, AuthButton, Checkbox, Divider, Tabs, TextField, useShake } from '@/components/auth/primitives';
+import { useAuthErrorMessage } from '@/components/auth/useAuthError';
+import { ArrowRightIcon, AtIcon, MessageIcon, PhoneIcon } from '@/components/landing/icons';
 
-const loginSchema = z.object({
-  phone: z.string().min(9, 'Numéro de téléphone requis'),
-  password: z.string().optional(),
-  rememberMe: z.boolean().optional(),
-});
-
-type LoginForm = z.infer<typeof loginSchema>;
+type Method = 'phone' | 'email';
+type Field = 'phone' | 'email' | 'password';
 
 export function LoginPage() {
-  const { login, loading } = useAuth();
-  const [authMethod, setAuthMethod] = useState<'phone' | 'email'>('phone');
-  const [showPassword, setShowPassword] = useState(false);
+  const t = useT();
+  const { isAuthenticated, user, login, sendLoginCode } = useAuth();
+  const [searchParams] = useSearchParams();
+  const describeError = useAuthErrorMessage();
+  const loginLock = useLockout('login');
+  const smsLock = useLockout('otp-send');
+  const [shakeProps, shake] = useShake();
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { rememberMe: false },
-  });
+  const [method, setMethod] = useState<Method>('phone');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors<Field>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState<'password' | 'sms' | null>(null);
+  const identifierRef = useRef<HTMLInputElement>(null);
+  const firstRender = useRef(true);
 
-  const phone = watch('phone');
+  // Focus the identifier when the tab changes (initial focus comes from autoFocus).
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    identifierRef.current?.focus();
+    setErrors({});
+    setFormError(null);
+  }, [method]);
 
-  const onSubmit = async (data: LoginForm) => {
+  const panel: AuthPanelProps = {
+    headline: t('panel.login.headline'),
+    subheadline: t('panel.login.sub'),
+    bullets: [t('panel.login.bullet1'), t('panel.login.bullet2'), t('panel.login.bullet3')],
+    testimonial: { quote: t('panel.login.quote'), author: t('panel.login.author') },
+  };
+
+  // Session check runs in parallel with first paint; redirect as soon as it resolves.
+  if (isAuthenticated && user) {
+    return <Navigate to={getDashboardPathForRole(user.role)} replace />;
+  }
+
+  const notice =
+    searchParams.get('reason') === 'inactivity'
+      ? t('login.inactivity')
+      : searchParams.get('reason') === 'password-updated'
+        ? t('login.passwordUpdated')
+        : null;
+
+  const fail = (message: string) => {
+    setFormError(message);
+    shake();
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (submitting || loginLock.locked) return;
+    setFormError(null);
+
+    const result =
+      method === 'phone'
+        ? validate<typeof loginPhoneSchema, Field>(loginPhoneSchema, { phone, password })
+        : validate<typeof loginEmailSchema, Field>(loginEmailSchema, { email, password });
+    if (!result.success) {
+      setErrors(result.errors);
+      shake();
+      return;
+    }
+    setErrors({});
+
+    setSubmitting('password');
     try {
-      await login({ phone: data.phone, password: data.password, rememberMe: data.rememberMe });
-    } catch (err) {
-      toastError(err instanceof Error ? err.message : 'Erreur de connexion');
+      await login(
+        method === 'phone'
+          ? { method, phone: toE164(phone), password, rememberMe }
+          : { method, email: email.trim(), password, rememberMe },
+      );
+    } catch (error) {
+      fail(describeError(error, { invalidKey: 'login.error.invalid', lockKey: 'login' }));
+    } finally {
+      setSubmitting(null);
     }
   };
 
+  const handleSms = async () => {
+    if (submitting || smsLock.locked) return;
+    if (!validate(phoneDigitsSchema, phone).success) {
+      setErrors({ phone: 'login.error.phone' });
+      identifierRef.current?.focus();
+      shake();
+      return;
+    }
+    setErrors({});
+    setFormError(null);
+    setSubmitting('sms');
+    try {
+      await sendLoginCode(toE164(phone), rememberMe);
+    } catch (error) {
+      fail(describeError(error, { lockKey: 'otp-send' }));
+      setSubmitting(null);
+    }
+  };
+
+  const attemptsHint =
+    !loginLock.locked && loginLock.attemptsLeft < 5 && formError
+      ? ` ${t('login.error.attemptsLeft', { count: loginLock.attemptsLeft })}`
+      : '';
+
   return (
-    <div className="animate-fade-in">
-      <div className="mb-8 text-center lg:text-left">
-        <h1 className="font-heading text-2xl font-bold">Connexion</h1>
-        <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">
-          Accédez à votre espace eLoyer Kinshasa
-        </p>
-      </div>
+    <AuthLayout title={t('login.pageTitle')} variant="split" panel={panel}>
+      <AuthCard>
+        <AuthCardHeader title={t('login.title')} subtitle={t('login.subtitle')} />
 
-      <div className="mb-6 flex rounded-lg border border-[var(--color-border)] p-1">
-        {(['phone', 'email'] as const).map((method) => (
-          <button
-            key={method}
-            type="button"
-            onClick={() => setAuthMethod(method)}
-            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
-              authMethod === method
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'
-            }`}
+        <div className="auth-enter">
+          {notice ? (
+            <Alert tone="info" className="mt-6">
+              {notice}
+            </Alert>
+          ) : null}
+
+          <div className="mt-8">
+            <Tabs<Method>
+              label={t('login.title')}
+              value={method}
+              onChange={setMethod}
+              tabs={[
+                { id: 'phone', label: t('login.tab.phone'), icon: <PhoneIcon size={18} /> },
+                { id: 'email', label: t('login.tab.email'), icon: <AtIcon size={18} /> },
+              ]}
+            />
+          </div>
+
+          <form
+            id={`auth-tab-panel-${method}`}
+            role="tabpanel"
+            aria-labelledby={`auth-tab-${method}`}
+            className={cn('auth-form mt-6', shakeProps.className)}
+            onAnimationEnd={shakeProps.onAnimationEnd}
+            onSubmit={(e) => void handleSubmit(e)}
+            noValidate
           >
-            {method === 'phone' ? 'Téléphone' : 'Email'}
-          </button>
-        ))}
-      </div>
+            {method === 'phone' ? (
+              <PhoneInput
+                key="phone"
+                ref={identifierRef}
+                id="login-phone"
+                value={phone}
+                onChange={setPhone}
+                error={errors.phone ? t(errors.phone) : undefined}
+                autoFocus
+                required
+              />
+            ) : (
+              <TextField
+                key="email"
+                ref={identifierRef}
+                id="login-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="off"
+                label={t('login.email.label')}
+                placeholder={t('login.email.placeholder')}
+                icon={<AtIcon size={20} />}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                error={errors.email ? t(errors.email) : undefined}
+                autoFocus
+                required
+              />
+            )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {authMethod === 'phone' ? (
-          <PhoneInput
-            value={phone}
-            onChange={(val) => setValue('phone', val)}
-            error={errors.phone?.message}
-            required
-          />
-        ) : (
-          <Input
-            type="email"
-            label="Adresse email"
-            placeholder="email@exemple.com"
-            {...register('phone')}
-            error={errors.phone?.message}
-          />
-        )}
+            <PasswordInput
+              id="login-password"
+              label={t('login.password.label')}
+              placeholder={t('login.password.placeholder')}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={errors.password ? t(errors.password) : undefined}
+              required
+            />
 
-        <div className="relative">
-          <Input
-            type={showPassword ? 'text' : 'password'}
-            label="Mot de passe / PIN"
-            placeholder="••••••••"
-            {...register('password')}
-            suffix={
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Masquer' : 'Afficher'}
+            <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+              <Checkbox
+                id="login-remember"
+                label={t('login.remember')}
+                hint={t('login.remember.hint')}
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <Link to={ROUTES.FORGOT_PASSWORD} className="auth-link mt-0.5 text-[14px]">
+                {t('login.forgot')}
+              </Link>
+            </div>
+
+            {formError ? (
+              <Alert id="login-error">
+                {formError}
+                {attemptsHint}
+              </Alert>
+            ) : loginLock.locked ? (
+              <Alert tone="warn">{t('login.error.locked', { duration: formatRemaining(loginLock.remainingMs) })}</Alert>
+            ) : null}
+
+            <AuthButton
+              type="submit"
+              loading={submitting === 'password'}
+              loadingLabel={t('login.submitting')}
+              disabled={loginLock.locked || submitting === 'sms'}
+              icon={<ArrowRightIcon size={18} />}
+              iconPosition="right"
+              arrow
+            >
+              {t('login.submit')}
+            </AuthButton>
+          </form>
+
+          <div className="mt-6">
+            <Divider>{t('common.or')}</Divider>
+          </div>
+
+          <div className="mt-6">
+            {method === 'phone' ? (
+              <AuthButton
+                variant="outline"
+                icon={<MessageIcon size={20} />}
+                onClick={() => void handleSms()}
+                loading={submitting === 'sms'}
+                disabled={smsLock.locked || submitting === 'password'}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            }
-          />
+                {t('login.alt.sms')}
+              </AuthButton>
+            ) : (
+              <AuthButton variant="outline" icon={<PhoneIcon size={20} />} onClick={() => setMethod('phone')}>
+                {t('login.alt.phone')}
+              </AuthButton>
+            )}
+          </div>
+
+          <p className="auth-muted mt-8 text-center">
+            {t('login.noAccount')}{' '}
+            <Link to={ROUTES.REGISTER} className="auth-link">
+              {t('login.create')}
+            </Link>
+          </p>
+
+          <TrustFooter />
         </div>
-
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register('rememberMe')} className="rounded" />
-            Se souvenir de moi
-          </label>
-          <Link
-            to={ROUTES.FORGOT_PASSWORD}
-            className="text-sm text-[var(--color-primary)] hover:underline"
-          >
-            Mot de passe oublié ?
-          </Link>
-        </div>
-
-        <Button type="submit" className="w-full" size="lg" loading={loading}>
-          Se connecter
-        </Button>
-      </form>
-
-      <p className="mt-6 text-center text-sm text-[var(--color-muted-foreground)]">
-        Vous n&apos;avez pas de compte ?{' '}
-        <Link to={ROUTES.REGISTER} className="font-medium text-[var(--color-primary)] hover:underline">
-          S&apos;inscrire
-        </Link>
-      </p>
-    </div>
+      </AuthCard>
+    </AuthLayout>
   );
 }
