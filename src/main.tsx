@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { FullPageLoading } from '@/components/ui/LoadingSpinner';
 import { Toaster } from '@/components/ui/Toast';
+import { isAuthPath, preloadEntryRoute } from '@/routes/entryRoutes';
 import App from './App';
 import '@/styles/index.css';
 
@@ -55,18 +56,23 @@ function whenStylesReady(): Promise<void> {
   });
 }
 
+/** Two animation frames after decode — guarantees the shell bitmap is painted. */
+function afterPaint(img: HTMLImageElement): Promise<void> {
+  return img
+    .decode()
+    .catch(() => undefined)
+    .then(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+}
+
 /**
  * index.html ships a static shell of the landing page (navbar identity + hero
  * backdrop). When present, let the browser paint the hero image once before
- * React takes over, so the very first frames are the branded page rather than
- * a blank root. decode() resolves once the bitmap is ready to paint, not merely
- * fetched.
+ * React takes over.
  */
-function whenShellPainted(): Promise<void> {
+function whenLandingShellPainted(): Promise<void> {
   const shellHero = document.querySelector<HTMLImageElement>('#lp-shell .sh-bg img');
   if (!shellHero) return Promise.resolve();
 
-  // Element Timing reports the exact frame the image was presented in.
   if (PerformanceObserver.supportedEntryTypes?.includes('element')) {
     return new Promise((resolve) => {
       const observer = new PerformanceObserver((list) => {
@@ -79,12 +85,35 @@ function whenShellPainted(): Promise<void> {
     });
   }
 
-  return shellHero
-    .decode()
-    .catch(() => undefined)
-    .then(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  return afterPaint(shellHero);
 }
 
-// Never let a slow asset hold the app hostage: mount after 1 s regardless.
-const deadline = new Promise<void>((resolve) => window.setTimeout(resolve, 1000));
-Promise.race([Promise.all([whenStylesReady(), whenShellPainted()]), deadline]).then(boot);
+/**
+ * Split auth pages ship a left-panel photo in the static shell — decode it first,
+ * but only on desktop where the panel is visible. On mobile the panel is hidden
+ * and waiting on the bitmap would delay LCP for no visual benefit.
+ */
+function whenAuthShellPainted(): Promise<void> {
+  const shell = document.getElementById('auth-shell');
+  if (!shell?.classList.contains('as--split')) return Promise.resolve();
+  if (!window.matchMedia('(min-width: 1024px)').matches) return Promise.resolve();
+  const panelImg = document.querySelector<HTMLImageElement>('#auth-shell .as-panel__bg img');
+  if (panelImg) return afterPaint(panelImg);
+  return Promise.resolve();
+}
+
+const pathname = window.location.pathname;
+const authEntry = isAuthPath(pathname);
+const mountCapMs = authEntry ? 800 : 1000;
+
+// Preload the matching entry route *and* wait for the static shell so React's
+// first commit paints the final page on top of the shell (no Suspense flash).
+const deadline = new Promise<void>((resolve) => window.setTimeout(resolve, mountCapMs));
+Promise.race([
+  Promise.all([
+    whenStylesReady(),
+    authEntry ? whenAuthShellPainted() : whenLandingShellPainted(),
+    preloadEntryRoute(pathname),
+  ]),
+  deadline,
+]).then(boot);

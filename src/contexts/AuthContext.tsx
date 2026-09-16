@@ -27,6 +27,9 @@ export type LoginInput =
 
 export type PasswordResetInput = { method: 'phone'; phone: string } | { method: 'email'; email: string };
 
+/** Surfaced to the login page as `?reason=` so it can explain why the user is back there. */
+export type LogoutReason = 'inactivity' | 'password-updated';
+
 interface AuthContextValue {
   user: AuthUser | null;
   session: ReturnType<typeof useAuthStore.getState>['session'];
@@ -43,7 +46,7 @@ interface AuthContextValue {
   startRegistration: (draft: RegisterDraft, password: string, document: File | null) => Promise<void>;
   requestPasswordReset: (input: PasswordResetInput) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
-  logout: (reason?: 'inactivity') => Promise<void>;
+  logout: (reason?: LogoutReason) => Promise<void>;
   updateProfile: (data: UserProfileFormData) => Promise<void>;
 }
 
@@ -120,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [setSession, setLoading, setUser, loadUserProfile, clearAuth]);
 
   const logout = useCallback(
-    async (reason?: 'inactivity') => {
+    async (reason?: LogoutReason) => {
       try {
         const { logout: authLogout } = await loadAuthService();
         await authLogout();

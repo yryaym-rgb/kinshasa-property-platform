@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ROUTES } from '@/config/routes';
@@ -79,8 +79,24 @@ export function AuthLayout({ title, variant = 'split', panel, children }: AuthLa
   );
 }
 
+function useDesktopPanel(): boolean {
+  const [desktop, setDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  return desktop;
+}
+
 function LeftPanel({ headline, subheadline, bullets, testimonial, steps }: AuthPanelProps) {
   const t = useT();
+  const desktop = useDesktopPanel();
+  if (!desktop) return null;
 
   return (
     <aside className="auth-panel">

@@ -6,18 +6,18 @@ import { NotFound } from "@/components/common/NotFound";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ROUTES } from "@/config/routes";
 import { APP_CONFIG } from "@/config/app.config";
-// The landing page is the primary entry point, so it ships in the initial
-// bundle: its chunks get <link rel="modulepreload"> in index.html instead of
-// being discovered only after React renders the router.
-import { LandingPage } from "@/pages/public/LandingPage";
+// Entry routes are preloaded in main.tsx before React mounts so the first commit
+// paints the final page on top of the static shell (no Suspense fallback flash).
+import {
+  LandingPage,
+  LoginPage,
+  RegisterPage,
+  VerifyOTPPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+} from "@/routes/entryRoutes";
 
-// Auth surface and dashboard shells are code-split so the public landing page
-// only ships what it renders.
-const AuthLayout = lazy(() =>
-  import("@/components/layouts/AuthLayout").then((m) => ({
-    default: m.AuthLayout,
-  })),
-);
+// Dashboard shells are code-split so the public landing page only ships what it renders.
 const BailleurLayout = lazy(() =>
   import("@/components/layouts/DashboardLayout").then((m) => ({
     default: m.BailleurLayout,
@@ -36,24 +36,6 @@ const AdminLayout = lazy(() =>
 const FiscalLayout = lazy(() =>
   import("@/components/layouts/DashboardLayout").then((m) => ({
     default: m.FiscalLayout,
-  })),
-);
-const LoginPage = lazy(() =>
-  import("@/pages/auth/LoginPage").then((m) => ({ default: m.LoginPage })),
-);
-const RegisterPage = lazy(() =>
-  import("@/pages/auth/RegisterPage").then((m) => ({
-    default: m.RegisterPage,
-  })),
-);
-const VerifyOTPPage = lazy(() =>
-  import("@/pages/auth/VerifyOTPPage").then((m) => ({
-    default: m.VerifyOTPPage,
-  })),
-);
-const ForgotPasswordPage = lazy(() =>
-  import("@/pages/auth/ForgotPasswordPage").then((m) => ({
-    default: m.ForgotPasswordPage,
   })),
 );
 const AdminDashboard = lazy(() =>
@@ -202,15 +184,11 @@ export default function App() {
         <Routes>
           {/* Public routes */}
           <Route path={ROUTES.HOME} element={<LandingPage />} />
-          <Route element={<AuthLayout />}>
-            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-            <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-            <Route path={ROUTES.VERIFY} element={<VerifyOTPPage />} />
-            <Route
-              path={ROUTES.FORGOT_PASSWORD}
-              element={<ForgotPasswordPage />}
-            />
-          </Route>
+          <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+          <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+          <Route path={ROUTES.VERIFY} element={<VerifyOTPPage />} />
+          <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+          <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
           <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 
           {/* Bailleur routes */}

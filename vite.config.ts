@@ -5,9 +5,8 @@ import path from 'path';
 
 /**
  * Loads the bundled stylesheet without blocking first paint. index.html carries
- * inline critical CSS for its static landing shell, and main.tsx waits for the
- * tagged stylesheet (`data-app-css`) before mounting React, so nothing renders
- * unstyled.
+ * inline critical CSS for its static shells, and main.tsx waits for the tagged
+ * stylesheet (`data-app-css`) before mounting React, so nothing renders unstyled.
  */
 function nonBlockingCss(): Plugin {
   return {
@@ -25,8 +24,57 @@ function nonBlockingCss(): Plugin {
   };
 }
 
+/** Maps entry routes to the page module name used to locate its JS chunk in the bundle. */
+const ENTRY_ROUTE_MODULES: Record<string, string> = {
+  '/': 'LandingPage',
+  '/login': 'LoginPage',
+  '/register': 'RegisterPage',
+  '/verify': 'VerifyOTPPage',
+  '/forgot-password': 'ForgotPasswordPage',
+  '/reset-password': 'ResetPasswordPage',
+};
+
+/**
+ * Injects an inline script that adds `<link rel="modulepreload">` for the chunk
+ * belonging to the current pathname, so the route module starts downloading in
+ * parallel with the entry bundle instead of after React boots.
+ */
+function routeModulePreload(): Plugin {
+  return {
+    name: 'eloyer:route-module-preload',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        const bundle = ctx.bundle;
+        if (!bundle) return html;
+
+        const routes: Record<string, string[]> = {};
+        for (const [route, moduleName] of Object.entries(ENTRY_ROUTE_MODULES)) {
+          const hrefs: string[] = [];
+          for (const [fileName, item] of Object.entries(bundle)) {
+            if (item.type !== 'chunk') continue;
+            const chunk = item as {
+              facadeModuleId?: string | null;
+              moduleIds: string[];
+            };
+            const hit =
+              chunk.facadeModuleId?.includes(moduleName) ||
+              chunk.moduleIds.some((id) => id.includes(moduleName) && id.includes('/pages/'));
+            if (hit) hrefs.push('/' + fileName);
+          }
+          if (hrefs.length) routes[route] = hrefs;
+        }
+
+        const script = `<script>(function(r){var p=location.pathname.replace(/\\/+$/,'')||'/';var c=r[p];if(!c)return;c.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.href=h;l.crossOrigin='';document.head.appendChild(l)})})(${JSON.stringify(routes)})</script>`;
+        return html.replace('</head>', `${script}\n</head>`);
+      },
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), nonBlockingCss()],
+  plugins: [react(), tailwindcss(), nonBlockingCss(), routeModulePreload()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

@@ -12,8 +12,6 @@ const key = (k: MessageKey) => ({ error: k });
 
 export const phoneDigitsSchema = z.string().check(z.regex(/^[89]\d{8}$/, key('login.error.phone')));
 export const emailSchema = z.string().check(z.trim(), z.email(key('login.error.email')));
-const optionalEmail = z.union([z.literal(''), emailSchema], key('register.email.error'));
-
 export const loginPhoneSchema = z.object({
   phone: phoneDigitsSchema,
   password: z.string().check(z.minLength(1, key('login.error.password'))),
@@ -27,28 +25,6 @@ export const loginEmailSchema = z.object({
 export const registerProfileSchema = z.object({
   role: z.enum(['locataire', 'bailleur', 'agence'], key('register.role.error')),
 });
-
-export const registerDetailsSchema = z.object({
-  fullName: z.string().check(z.trim(), z.minLength(2, key('register.fullName.error'))),
-  phone: phoneDigitsSchema,
-  email: optionalEmail,
-  commune: z.string().check(z.minLength(1, key('register.commune.error'))),
-  address: z.string(),
-});
-
-export const registerSecuritySchema = z
-  .object({
-    password: z.string().check(z.minLength(PASSWORD_MIN_LENGTH, key('register.password.error'))),
-    confirm: z.string(),
-    pin: z.union([z.literal(''), z.string().check(z.regex(/^\d{4,6}$/, key('register.pin.error')))], key('register.pin.error')),
-    acceptTerms: z.literal(true, key('register.terms.error')),
-  })
-  .check(
-    z.refine((data) => data.password === data.confirm, {
-      error: 'register.confirm.mismatch' satisfies MessageKey,
-      path: ['confirm'],
-    }),
-  );
 
 export const newPasswordSchema = z
   .object({

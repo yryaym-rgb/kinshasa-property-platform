@@ -13,13 +13,7 @@ import {
   type RegisterRole,
 } from '@/lib/authStorage';
 import { cn } from '@/lib/cn';
-import {
-  registerDetailsSchema,
-  registerProfileSchema,
-  registerSecuritySchema,
-  validate,
-  type FieldErrors,
-} from '@/validations/authSchemas';
+import { registerProfileSchema, validate, type FieldErrors } from '@/validations/authSchemas';
 import { AuthLayout, type AuthPanelProps } from '@/components/auth/AuthLayout';
 import { AuthCard, AuthCardHeader } from '@/components/auth/AuthCard';
 import { AuthStepper } from '@/components/auth/AuthStepper';
@@ -129,7 +123,8 @@ export function RegisterPage() {
     return result.success;
   };
 
-  const validateStep2 = () => {
+  const validateStep2 = async () => {
+    const { registerDetailsSchema } = await import('@/validations/registerDetailsSchema');
     const result = validate<typeof registerDetailsSchema, DetailsField>(registerDetailsSchema, {
       fullName: draft.fullName,
       phone: draft.phone,
@@ -151,7 +146,8 @@ export function RegisterPage() {
     return true;
   };
 
-  const validateStep3 = () => {
+  const validateStep3 = async () => {
+    const { registerSecuritySchema } = await import('@/validations/registerSecuritySchema');
     const result = validate<typeof registerSecuritySchema, SecurityField>(registerSecuritySchema, {
       password,
       confirm,
@@ -166,9 +162,9 @@ export function RegisterPage() {
     return result.success;
   };
 
-  const handleContinue = (e: FormEvent) => {
+  const handleContinue = async (e: FormEvent) => {
     e.preventDefault();
-    const ok = step === 1 ? validateStep1() : step === 2 ? validateStep2() : true;
+    const ok = step === 1 ? validateStep1() : step === 2 ? await validateStep2() : true;
     if (!ok) {
       shake();
       return;
@@ -179,7 +175,7 @@ export function RegisterPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (submitting || smsLock.locked) return;
-    if (!validateStep3()) {
+    if (!(await validateStep3())) {
       shake();
       return;
     }

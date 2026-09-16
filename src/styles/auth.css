@@ -501,6 +501,34 @@
   color: var(--drc-navy);
 }
 
+/* "← Retour à la connexion" — 48px tap target without visual bulk. */
+.auth-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: -12px 0 0 -4px;
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--drc-gray-600);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: color 0.2s ease-out;
+}
+
+.auth-back svg {
+  transition: transform 0.2s ease-out;
+}
+
+.auth-back:hover {
+  color: var(--drc-blue-ink);
+}
+
+.auth-back:hover svg {
+  transform: translateX(-3px);
+}
+
 .auth-muted {
   color: var(--drc-gray-600);
   font-size: 14px;
