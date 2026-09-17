@@ -32,6 +32,11 @@ interface AuthLayoutProps {
   /** `split` = photo panel + form (desktop); `centered` = single card on a tinted backdrop. */
   variant?: 'split' | 'centered';
   panel?: AuthPanelProps;
+  /**
+   * Public entry points (login, register) may be indexed. Token- and
+   * code-driven screens (OTP, password reset) stay `noindex`.
+   */
+  indexable?: boolean;
   children: ReactNode;
 }
 
@@ -40,7 +45,7 @@ interface AuthLayoutProps {
  * padding, top bar height, body offset, card width) is mirrored by the
  * `#auth-shell` static markup in index.html — change both together.
  */
-export function AuthLayout({ title, variant = 'split', panel, children }: AuthLayoutProps) {
+export function AuthLayout({ title, variant = 'split', panel, indexable = false, children }: AuthLayoutProps) {
   const t = useT();
   const split = variant === 'split' && panel;
 
@@ -48,7 +53,7 @@ export function AuthLayout({ title, variant = 'split', panel, children }: AuthLa
     <>
       <Helmet>
         <title>{title}</title>
-        <meta name="robots" content="noindex" />
+        {indexable ? null : <meta name="robots" content="noindex" />}
       </Helmet>
 
       <div className={cn('auth', split ? 'auth--split' : 'auth--centered')}>

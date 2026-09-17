@@ -130,7 +130,7 @@ export function LoginPage() {
       : '';
 
   return (
-    <AuthLayout title={t('login.pageTitle')} variant="split" panel={panel}>
+    <AuthLayout title={t('login.pageTitle')} variant="split" panel={panel} indexable>
       <AuthCard>
         <AuthCardHeader title={t('login.title')} subtitle={t('login.subtitle')} />
 
