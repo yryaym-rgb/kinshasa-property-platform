@@ -22,10 +22,6 @@ export const loginEmailSchema = z.object({
   password: z.string().check(z.minLength(1, key('login.error.password'))),
 });
 
-export const registerProfileSchema = z.object({
-  role: z.enum(['locataire', 'bailleur', 'agence'], key('register.role.error')),
-});
-
 export const newPasswordSchema = z
   .object({
     password: z.string().check(z.minLength(PASSWORD_MIN_LENGTH, key('register.password.error'))),

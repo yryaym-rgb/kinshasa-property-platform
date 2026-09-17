@@ -1266,6 +1266,116 @@
   color: var(--drc-gray-600);
 }
 
+/* ── Step skeleton (Suspense fallback for lazy wizard steps) ──── */
+
+.auth-skel {
+  display: grid;
+  gap: 20px;
+}
+
+.auth-skel__bar,
+.auth-skel__control,
+.auth-skel__drop,
+.auth-skel__box {
+  display: block;
+  background: linear-gradient(90deg, var(--drc-gray-100) 25%, #eaeef4 37%, var(--drc-gray-100) 63%);
+  background-size: 400% 100%;
+  animation: auth-shimmer 1.6s ease-in-out infinite;
+}
+
+.auth-skel__bar {
+  border-radius: 6px;
+}
+
+.auth-skel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Same line box as .auth-label / .auth-help so rows keep their height. */
+.auth-skel__line {
+  display: flex;
+  align-items: center;
+  height: 21px;
+}
+
+.auth-skel__line--help {
+  height: 19px;
+}
+
+.auth-skel__control {
+  height: 56px;
+  border: 1.5px solid var(--drc-gray-200);
+  border-radius: 12px;
+}
+
+.auth-skel__drop {
+  height: 132px;
+  border: 2px dashed var(--drc-gray-200);
+  border-radius: 12px;
+}
+
+.auth-skel__meter {
+  display: grid;
+  gap: 10px;
+  margin-top: -8px;
+}
+
+.auth-skel__bars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.auth-skel__bars .auth-skel__bar {
+  height: 4px;
+  border-radius: 999px;
+}
+
+.auth-skel__rules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.auth-skel__checks {
+  display: grid;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.auth-skel__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 24px;
+}
+
+.auth-skel__box {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 7px;
+}
+
+.auth-skel__lines {
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+@keyframes auth-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
 /* ── Password strength ────────────────────────────────────────── */
 
 .auth-strength {
