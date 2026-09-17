@@ -4,8 +4,31 @@
 @import './landing.css';
 @import './auth.css';
 
+/*
+ * Metric-compatible stand-in for Inter while the web font loads (mirrored in the
+ * critical CSS of index.html — keep both in sync). Sized ~1.5% above Inter so
+ * text painted before the web font arrives is never smaller than its final
+ * rendering; the swap itself is imperceptible and never re-records LCP.
+ */
+@font-face {
+  font-family: 'Inter Fallback';
+  src:
+    local('Roboto'),
+    local('Roboto-Regular'),
+    local('Arial'),
+    local('ArialMT'),
+    local('Liberation Sans'),
+    local('Arimo'),
+    local('Helvetica Neue'),
+    local('Helvetica');
+  size-adjust: 109%;
+  ascent-override: 98.2%;
+  descent-override: 27.5%;
+  line-gap-override: 0%;
+}
+
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', 'Inter Fallback', ui-sans-serif, system-ui, sans-serif;
   --font-heading: 'Poppins', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-hand: 'Caveat', cursive;

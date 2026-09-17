@@ -8,12 +8,15 @@
     <meta name="theme-color" content="#0A1628" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Fonts load off the critical path; font-display: swap keeps text visible meanwhile. -->
+    <!--
+      Web fonts load off the critical path (font-display: swap keeps text visible
+      meanwhile). The link has no `rel` until a script below activates it: on most
+      routes immediately, on auth routes only once React has replaced the static
+      shell — see the shell script at the end of <body>.
+    -->
     <link
-      rel="preload"
-      as="style"
+      id="app-fonts"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Caveat:wght@700&display=swap"
-      onload="this.onload=null;this.rel='stylesheet'"
     />
     <noscript>
       <link
@@ -28,8 +31,15 @@
       it has arrived.
     -->
     <style>
+      /*
+        Metric-compatible stand-in for Inter while the web font loads (same face as
+        --font-sans in src/styles/index.css — keep both in sync). Scaled ~1.5% wider
+        and taller than Inter so text painted before the web font arrives is never
+        smaller than its final rendering: the shell's first paint stays the LCP.
+      */
+      @font-face{font-family:"Inter Fallback";src:local("Roboto"),local("Roboto-Regular"),local("Arial"),local("ArialMT"),local("Liberation Sans"),local("Arimo"),local("Helvetica Neue"),local("Helvetica");size-adjust:109%;ascent-override:98.2%;descent-override:27.5%;line-gap-override:0%}
       body{margin:0}
-      #lp-shell{--sh-navy:#0a1628;--sh-nav:80px;background:#fff;font-family:Inter,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+      #lp-shell{--sh-navy:#0a1628;--sh-nav:80px;background:#fff;font-family:Inter,"Inter Fallback",ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
       #lp-shell .sh-nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.86);border-bottom:1px solid #e5e9f0}
       #lp-shell .sh-wrap{box-sizing:border-box;display:flex;align-items:center;height:var(--sh-nav);width:100%;max-width:1280px;margin-inline:auto;padding-inline:24px}
       #lp-shell .sh-id{display:flex;align-items:center;gap:12px}
@@ -50,14 +60,18 @@
         #lp-shell .sh-sep{display:block;height:36px;width:1px;background:#e5e9f0}
         #lp-shell .sh-word{font-size:22px}
         #lp-shell .sh-word b{color:#0086c2}
-        #lp-shell .sh-cap{display:block;margin-top:5px;font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#5b6b80}
+        #lp-shell .sh-cap{display:block;margin-top:5px;font-family:Inter,"Inter Fallback",ui-sans-serif,system-ui,sans-serif;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#5b6b80}
       }
       @media (min-width:768px){#lp-shell .sh-wrap{padding-inline:40px}}
       @media (max-width:1023px){
         #lp-shell .sh-bg{inset:0 0 auto 0;height:max(calc(100svh - var(--sh-nav) - 3px),700px);mask-image:linear-gradient(to bottom,#000 58%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 58%,transparent 100%)}
       }
       /* Auth shell (#auth-shell) — geometry mirrors auth.css; keep both in sync. */
-      #auth-shell{--as-navy:#0a1628;--as-topbar:72px;--as-body-top:clamp(8px,calc(50svh - 400px),120px);display:grid;grid-template-columns:minmax(0,1fr);min-height:100svh;background:#fff;font-family:Inter,ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#1a1a1a}
+      #auth-shell{--as-navy:#0a1628;--as-topbar:72px;--as-body-top:clamp(8px,calc(50svh - 400px),120px);display:grid;grid-template-columns:minmax(0,1fr);min-height:100svh;background:#fff;font-family:Inter,"Inter Fallback",ui-sans-serif,system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;color:#1a1a1a}
+      /* Same box model and [hidden] semantics as Tailwind preflight, so nothing resizes when the app stylesheet lands. */
+      #auth-shell *,#auth-shell *::before,#auth-shell *::after{box-sizing:border-box}
+      #auth-shell [hidden]{display:none!important}
+      #auth-shell p{margin:0}
       #auth-shell .as-flag{display:block;height:3px;width:100%;background:linear-gradient(90deg,#009fe3 0 33.333%,#ffdd00 33.333% 66.666%,#ef3e42 66.666% 100%)}
       #auth-shell .as-main{position:relative;display:flex;flex-direction:column;min-height:100svh}
       #auth-shell .as-topbar{display:flex;align-items:center;justify-content:space-between;height:var(--as-topbar);padding:0 24px}
@@ -75,7 +89,8 @@
       #auth-shell .as-tabs span{display:block;height:20px;width:80px;border-radius:4px;background:#f5f7fa}
       #auth-shell .as-tabs span:first-child{background:#e8f6fc}
       #auth-shell .as-field{height:56px;margin-top:20px;border-radius:12px;border:1.5px solid #e5e9f0;background:#fff}
-      #auth-shell .as-btn{height:56px;margin-top:20px;border-radius:12px;background:#009fe3}
+      #auth-shell .as-btn{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;margin-top:20px;border-radius:12px;background:#0077b6;color:#fff;font-family:Poppins,ui-sans-serif,system-ui,sans-serif;font-size:16px;font-weight:600;line-height:1;box-shadow:0 1px 2px rgba(10,22,40,.08),0 10px 24px -8px rgba(0,159,227,.55)}
+      #auth-shell .as-btn svg{display:block}
       #auth-shell .as-panel{display:none}
       #auth-shell.as--centered{background:linear-gradient(180deg,#fff 0%,#f5f7fa 100%)}
       #auth-shell.as--centered::before{content:'';position:absolute;inset:0 0 auto 0;height:360px;pointer-events:none;background:linear-gradient(90deg,rgba(0,159,227,.18) 0%,rgba(255,221,0,.16) 50%,rgba(239,62,66,.14) 100%);mask-image:linear-gradient(to bottom,#000 0%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 0%,transparent 100%)}
@@ -84,10 +99,35 @@
       #auth-shell.as--centered .as-badge--yellow{background:#ffdd00}
       #auth-shell.as--centered .as-title,#auth-shell.as--centered .as-sub{text-align:center}
       #auth-shell .as-back{height:32px;margin-bottom:8px}
-      #auth-shell .as-otp{display:flex;justify-content:center;gap:12px;margin-top:32px}
-      #auth-shell .as-otp span{width:44px;height:56px;border-radius:12px;border:2px solid #e5e9f0;background:#fff}
-      @media (min-width:640px){#auth-shell .as-otp span{width:52px;height:64px}}
-      @media (min-width:768px){#auth-shell .as-topbar{padding:0 40px}#auth-shell.as--centered .as-card{padding:40px;max-width:500px}}
+      #auth-shell .as-otp{display:flex;justify-content:center;gap:8px;margin-top:32px}
+      #auth-shell .as-otp span{width:46px;height:58px;border-radius:12px;border:2px solid #e5e9f0;background:#fff}
+      @media (min-width:421px){#auth-shell .as-otp{gap:12px}#auth-shell .as-otp span{width:56px;height:64px}}
+      @media (min-width:640px){#auth-shell.as--centered .as-card{padding:40px}}
+      @media (min-width:768px){#auth-shell .as-topbar{padding:0 40px}}
+      @media (min-width:768px) and (max-width:1023px){#auth-shell .as-card{max-width:500px}}
+      /* Register, step 1: stepper + the three profile cards (the page's largest text, i.e. its LCP). Mirrors .auth-stepper / .auth-choice. */
+      #auth-shell .as-stepper{display:flex;align-items:flex-start;margin:0;padding:0;list-style:none}
+      #auth-shell .as-stepper li{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;min-width:0}
+      #auth-shell .as-stepper li:not(:last-child)::after{content:'';position:absolute;top:15px;left:calc(50% + 20px);right:calc(-50% + 20px);height:2px;background:#e5e9f0}
+      #auth-shell .as-stepper i{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;border:2px solid #e5e9f0;background:#fff;color:#5b6b80;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-style:normal;font-size:13px;font-weight:600}
+      #auth-shell .as-stepper li:first-child i{border-color:#009fe3;background:#009fe3;color:#fff;transform:scale(1.12);box-shadow:0 0 0 5px rgba(0,159,227,.16)}
+      #auth-shell .as-stepper span{font-size:12px;font-weight:500;color:#5b6b80;white-space:nowrap}
+      #auth-shell .as-stepper li:first-child span{color:#0077b6;font-weight:600}
+      #auth-shell .as-card--register .as-title{margin-top:32px}
+      #auth-shell .as-choices{display:grid;gap:12px;margin-top:32px}
+      #auth-shell .as-choice{display:flex;align-items:center;gap:16px;width:100%;min-height:100px;padding:16px 20px;border:2px solid #e5e9f0;border-radius:16px;background:#fff;text-align:left}
+      #auth-shell .as-choice__radio{flex-shrink:0;width:24px;height:24px;border-radius:999px;border:2px solid #94a3b8;background:#fff}
+      #auth-shell .as-choice__icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:48px;height:48px;border-radius:999px;background:var(--c-bg);color:var(--c-fg)}
+      #auth-shell .as-choice__text{min-width:0}
+      #auth-shell .as-choice__title{font-family:Poppins,ui-sans-serif,system-ui,sans-serif;font-size:18px;font-weight:600;line-height:1.2;color:var(--as-navy)}
+      #auth-shell .as-choice__desc{margin-top:4px;font-size:14px;line-height:1.45;color:#475569}
+      #auth-shell .as-card--register .as-btn{margin-top:28px}
+      #auth-shell .as-muted{margin-top:32px;text-align:center;font-size:14px;color:#475569}
+      #auth-shell .as-muted b{font-weight:600;color:#0077b6}
+      #auth-shell .as-trust{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:32px;text-align:center;font-size:12px;color:#5b6b80}
+      #auth-shell .as-trust p{display:inline-flex;align-items:center;gap:8px}
+      #auth-shell .as-trust img{display:block;width:20px;height:20px}
+      #auth-shell .as-trust i{font-style:normal;color:#94a3b8}
       @media (min-width:1024px){
         #auth-shell.as--split{grid-template-columns:55fr 45fr}
         #auth-shell.as--split .as-panel{position:relative;display:flex;flex-direction:column;justify-content:center;min-height:100svh;padding:clamp(48px,7vh,80px) clamp(48px,5.5vw,80px);background:var(--as-navy);color:#fff;isolation:isolate;overflow:hidden}
@@ -99,10 +139,22 @@
         #auth-shell.as--split .as-topbar{justify-content:flex-end}
       }
     </style>
-    <!-- Kick off route-critical images before any JavaScript runs. -->
+    <!-- Kick off route-critical images (and, outside the auth shell, web fonts) before any JavaScript runs. -->
     <script>
       (function () {
         var path = location.pathname.replace(/\/+$/, '') || '/';
+        var authPaths = ['/login', '/register', '/verify', '/forgot-password', '/reset-password'];
+        if (authPaths.indexOf(path) === -1) {
+          var fonts = document.getElementById('app-fonts');
+          if (fonts) {
+            fonts.as = 'style';
+            fonts.onload = function () {
+              this.onload = null;
+              this.rel = 'stylesheet';
+            };
+            fonts.rel = 'preload';
+          }
+        }
         if (path === '/') {
           var heroPreload = document.createElement('link');
           heroPreload.rel = 'preload';
@@ -123,11 +175,16 @@
           logo.href = '/landing/logo-kinshasa.png';
           document.head.appendChild(logo);
           if (window.matchMedia('(min-width: 1024px)').matches) {
+            // Same candidates/sizes as the shell's and AuthLayout's <picture>, so all three resolve to one file.
             var panel = document.createElement('link');
             panel.rel = 'preload';
             panel.as = 'image';
             panel.type = 'image/webp';
-            panel.href = '/landing/hero-kinshasa-1024.webp';
+            panel.setAttribute(
+              'imagesrcset',
+              '/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w'
+            );
+            panel.setAttribute('imagesizes', '1024px');
             panel.setAttribute('fetchpriority', 'high');
             document.head.appendChild(panel);
           }
@@ -215,6 +272,43 @@
           </main>
         </div>
       </div>
+      <!--
+        Register, step 1: real stepper, title and the three profile cards so the
+        page's LCP text paints from HTML. Cloned into .as-card on /register; React
+        renders the identical geometry (see ProfileSelector / AuthStepper).
+      -->
+      <template id="as-register-tpl">
+        <ol class="as-stepper" aria-hidden="true">
+          <li><i>1</i><span>Profil</span></li>
+          <li><i>2</i><span>Informations</span></li>
+          <li><i>3</i><span>Sécurité</span></li>
+        </ol>
+        <h1 class="as-title">Je suis…</h1>
+        <p class="as-sub">Sélectionnez votre profil pour continuer.</p>
+        <div class="as-choices" aria-hidden="true">
+          <div class="as-choice" style="--c-bg:rgba(0,159,227,.12);--c-fg:#0077b6">
+            <span class="as-choice__radio"></span>
+            <span class="as-choice__icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c.6-3.7 3.7-6 7.5-6s6.9 2.3 7.5 6"/></svg></span>
+            <span class="as-choice__text"><p class="as-choice__title">Locataire</p><p class="as-choice__desc">Je loue un logement et je souhaite payer mon loyer en ligne.</p></span>
+          </div>
+          <div class="as-choice" style="--c-bg:rgba(255,221,0,.22);--c-fg:#0a1628">
+            <span class="as-choice__radio"></span>
+            <span class="as-choice__icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.5 20v-6h5v6"/></svg></span>
+            <span class="as-choice__text"><p class="as-choice__title">Bailleur</p><p class="as-choice__desc">Je possède un ou plusieurs biens que je souhaite louer.</p></span>
+          </div>
+          <div class="as-choice" style="--c-bg:rgba(239,62,66,.12);--c-fg:#d9262b">
+            <span class="as-choice__radio"></span>
+            <span class="as-choice__icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20.5h16"/><path d="M6 20.5v-15l6-2.5 6 2.5v15"/><path d="M9 9h1.5M13.5 9H15M9 12.5h1.5M13.5 12.5H15M9 16h1.5M13.5 16H15"/></svg></span>
+            <span class="as-choice__text"><p class="as-choice__title">Agence immobilière</p><p class="as-choice__desc">Je gère les biens et contrats de mes clients.</p></span>
+          </div>
+        </div>
+        <div class="as-btn" aria-hidden="true">Continuer<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13 5.5l6.5 6.5-6.5 6.5"/></svg></div>
+        <p class="as-muted" aria-hidden="true">Déjà un compte ? <b>Se connecter</b></p>
+        <div class="as-trust" aria-hidden="true">
+          <p><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><path d="M12 14.5v2"/></svg><span>Connexion sécurisée par chiffrement de bout en bout</span></p>
+          <p><img src="/landing/logo-kinshasa.png" alt="" width="20" height="20" /><span>Ville de Kinshasa</span><i>·</i><span>Conditions Générales d'Utilisation</span><i>·</i><span>Politique de Confidentialité</span></p>
+        </div>
+      </template>
     </div>
     <script>
       (function () {
@@ -238,6 +332,33 @@
 
         var shell = document.getElementById('auth-shell');
         if (!shell) return;
+
+        /*
+         * The shell's text is the LCP. It paints in the fallback font; if the web
+         * fonts landed before React mounted, React's identical text would repaint
+         * wider (Inter is wider than the system fallback) and Chrome would move LCP
+         * to that later paint. Web fonts are therefore activated only once React has
+         * swapped the shell out — one frame later, so both paint from the same metrics.
+         */
+        var fonts = document.getElementById('app-fonts');
+        var fontsDone = false;
+        function activateFonts() {
+          if (fontsDone || !fonts) return;
+          fontsDone = true;
+          fonts.rel = 'stylesheet';
+        }
+        if (root && 'MutationObserver' in window) {
+          var mo = new MutationObserver(function () {
+            if (shell.isConnected) return;
+            mo.disconnect();
+            requestAnimationFrame(activateFonts);
+          });
+          mo.observe(root, { childList: true });
+        }
+        window.addEventListener('load', function () {
+          setTimeout(activateFonts, 3000);
+        });
+
         shell.hidden = false;
         shell.removeAttribute('aria-hidden');
         shell.className += isSplit ? ' as--split' : ' as--centered';
@@ -255,7 +376,7 @@
           var aside = document.createElement('aside');
           aside.className = 'as-panel';
           aside.innerHTML =
-            '<div class="as-panel__bg"><picture><source srcset="/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w" sizes="55vw" type="image/webp" /><img src="/landing/hero-kinshasa.jpg" alt="" width="1600" height="1067" fetchpriority="high" decoding="sync" elementtiming="auth-shell-panel" /></picture></div><div class="as-panel__overlay"></div><p class="as-panel__head">Bienvenue sur eLoyer Kinshasa</p>';
+            '<div class="as-panel__bg"><picture><source srcset="/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w" sizes="1024px" type="image/webp" /><img src="/landing/hero-kinshasa.jpg" alt="" width="1600" height="1067" fetchpriority="high" decoding="sync" elementtiming="auth-shell-panel" /></picture></div><div class="as-panel__overlay"></div><p class="as-panel__head">Bienvenue sur eLoyer Kinshasa</p>';
           shell.insertBefore(aside, shell.firstChild);
         }
         if (!isSplit && badge) badge.hidden = false;
@@ -277,11 +398,13 @@
           if (title) title.textContent = 'Nouveau mot de passe';
           if (sub) sub.textContent = 'Choisissez un nouveau mot de passe fort.';
         } else if (path === '/register') {
-          if (title) title.textContent = 'Je suis…';
-          if (sub) sub.textContent = 'Sélectionnez votre profil pour continuer.';
-          if (tabs) tabs.hidden = true;
-          if (fields) fields.style.display = 'none';
-          if (btn) btn.style.marginTop = '32px';
+          var card = shell.querySelector('.as-card');
+          var regTpl = document.getElementById('as-register-tpl');
+          if (card && regTpl && regTpl.content) {
+            card.className += ' as-card--register';
+            card.textContent = '';
+            card.appendChild(regTpl.content.cloneNode(true));
+          }
         } else if (path === '/login') {
           if (tabs) tabs.hidden = false;
         }

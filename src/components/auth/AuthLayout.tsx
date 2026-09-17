@@ -107,9 +107,15 @@ function LeftPanel({ headline, subheadline, bullets, testimonial, steps }: AuthP
     <aside className="auth-panel">
       <div className="auth-panel__bg" aria-hidden="true">
         <picture>
+          {/*
+            The photo is object-fit: cover in a ~55vw × 100vh panel, so it is scaled by
+            height and needs ~1000 source pixels of width on a 1× desktop. A fixed slot
+            width keeps candidate selection identical to the static shell's <picture>
+            and the preload in index.html (one download, one LCP candidate).
+          */}
           <source
             srcSet={`${PANEL_IMAGE.webpSm} 750w, ${PANEL_IMAGE.webpMd} 1024w, ${PANEL_IMAGE.webp} 1600w`}
-            sizes="55vw"
+            sizes="1024px"
             type="image/webp"
           />
           <img src={PANEL_IMAGE.jpg} alt="" width={1600} height={1067} fetchPriority="high" decoding="async" />
