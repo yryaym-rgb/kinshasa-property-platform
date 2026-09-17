@@ -56,7 +56,7 @@ export function PaymentPage() {
         amount: computeBreakdown(rent).total,
         periode: getCurrentPeriod(),
         phone: user?.phone,
-        idempotencyKey: generateIdempotencyKey(),
+        idempotencyKey: generateIdempotencyKey(c.id),
       });
       setStep('amount');
     }
@@ -78,7 +78,7 @@ export function PaymentPage() {
       amount: breakdown.total,
       periode: getCurrentPeriod(),
       phone: user?.phone,
-      idempotencyKey: generateIdempotencyKey(),
+      idempotencyKey: generateIdempotencyKey(c.id),
     });
     setStep('amount');
   };

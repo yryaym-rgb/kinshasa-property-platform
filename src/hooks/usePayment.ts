@@ -38,7 +38,11 @@ export function usePayment() {
     return { ...breakdown, method: method ?? 'orange_money' };
   }, []);
 
-  const generateIdempotencyKey = useCallback(() => mintIdempotencyKey(payment.contratId ?? 'new'), [payment.contratId]);
+  // The wizard mints the key in the same update that selects the contract, so the id is passed explicitly.
+  const generateIdempotencyKey = useCallback(
+    (contractId?: string) => mintIdempotencyKey(contractId ?? payment.contratId ?? 'new'),
+    [payment.contratId],
+  );
 
   const initiate = useCallback(async () => {
     if (initiatingRef.current) return;
