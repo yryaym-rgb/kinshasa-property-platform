@@ -1,97 +1,87 @@
+/**
+ * Payment service types.
+ *
+ * The canonical domain types live in `@/types/payment` (shared with the Edge
+ * Functions). This module keeps the wizard-specific view models and a few
+ * backwards-compatible aliases used by Module 2 screens.
+ */
+
 import type { Paiement } from '@/types/database.types';
-import type { TaxCalculationResult } from '@/services/tax/taxService';
+import type { TaxBreakdown } from '@/services/tax/taxService';
+import type { PaymentProviderKey, PaymentState } from '@/types/payment';
+import { getPaymentErrorMessage } from '@/utils/paymentErrors';
 
-export type PaymentProviderId =
-  | 'orange_money'
-  | 'mpesa'
-  | 'airtel_money'
-  | 'card'
-  | 'bank';
+export type {
+  PaymentMethod,
+  PaymentStep,
+  PaymentProviderKey,
+  PaymentState,
+  PaymentStatusSnapshot,
+  InitiatePaymentRequest,
+  InitiatePaymentResponse,
+  VerifyPaymentRequest,
+  VerifyPaymentResponse,
+  RefundPaymentRequest,
+  RefundPaymentResponse,
+  PaymentRecord,
+  PipelineStatus,
+} from '@/types/payment';
+export { isMobileMoneyProvider, providerKeyToDbMethod, MOBILE_MONEY_PROVIDERS } from '@/types/payment';
 
-export interface PaymentProvider {
-  id: PaymentProviderId;
-  name: string;
-  icon: string;
-  subtext: string;
-  supportsPartial: boolean;
-  processingTime: string;
-  initiate(params: PaymentInitParams): Promise<PaymentInitResult>;
-  verify(transactionId: string): Promise<PaymentVerifyResult>;
-  cancel(transactionId: string): Promise<void>;
-}
+/** @deprecated use `PaymentProviderKey` */
+export type PaymentProviderId = PaymentProviderKey;
 
-export interface PaymentInitParams {
-  amount: number;
-  currency: 'CDF' | 'USD';
-  phone?: string;
-  reference: string;
-  description: string;
-  metadata?: Record<string, unknown>;
-}
-
-export interface PaymentInitResult {
-  providerTransactionId: string;
-  status: 'pending' | 'processing' | 'success' | 'failed';
-  redirectUrl?: string;
-  message?: string;
-}
-
-export interface PaymentVerifyResult {
-  status: 'pending' | 'processing' | 'success' | 'failed';
-  providerReference?: string;
-  paidAt?: string;
-  failureReason?: string;
-}
-
+/** Input of `paymentService.initiatePayment` (frontend side). */
 export interface InitiatePaymentInput {
   contratId: string;
   tenantId: string;
+  /** Total charged to the tenant. */
   amount: number;
+  /** Gross rent (tax base). */
   rentAmount: number;
   currency: 'CDF' | 'USD';
-  method: PaymentProviderId;
+  method: PaymentProviderKey;
   phone?: string;
   periode: string;
-  idempotencyKey: string;
+  idempotencyKey?: string;
   description?: string;
+  returnUrl?: string;
 }
 
+/** Result of `paymentService.initiatePayment`. */
 export interface PaymentResult {
-  status: 'success' | 'failed' | 'pending';
-  payment?: Paiement & { receiptId?: string; receiptCode?: string };
-  failureReason?: string;
-  providerReference?: string;
+  paymentId: string;
+  reference: string;
+  state: PaymentState;
+  providerTransactionId: string | null;
+  redirectUrl?: string;
+  message?: string;
+  expiresAt: string | null;
+  idempotentReplay: boolean;
 }
 
+/** Lightweight status returned by `paymentService.getPaymentStatus`. */
 export interface PaymentStatus {
   id: string;
+  state: PaymentState;
   status: Paiement['status'];
   failureReason?: string | null;
   providerReference?: string | null;
+  paidAt?: string | null;
+  receiptId?: string | null;
+  receiptCode?: string | null;
 }
 
-export interface PaymentMethod {
-  id: PaymentProviderId;
-  name: string;
-  icon: string;
-  subtext: string;
-  supportsPartial: boolean;
-  processingTime: string;
-  available: boolean;
+export interface PaymentBreakdown extends TaxBreakdown {
+  method: PaymentProviderKey;
 }
-
-export interface PaymentBreakdown extends TaxCalculationResult {
-  method: PaymentProviderId;
-}
-
-export type PaymentStep = 'select' | 'amount' | 'method' | 'confirm' | 'processing' | 'success' | 'failed';
 
 export interface PaymentWizardState {
   contratId?: string;
   amount?: number;
   rentAmount?: number;
   periode?: string;
-  method?: PaymentProviderId;
+  method?: PaymentProviderKey;
   phone?: string;
   breakdown?: PaymentBreakdown;
   idempotencyKey?: string;
@@ -99,29 +89,7 @@ export interface PaymentWizardState {
   failureReason?: string;
 }
 
-export const FAILURE_REASON_MESSAGES: Record<string, string> = {
-  insufficient_funds: 'Solde insuffisant sur votre compte Orange Money.',
-  user_cancelled: 'Vous avez annulé le paiement.',
-  timeout: 'Le délai de traitement a expiré. Veuillez réessayer.',
-  provider_error: 'Erreur du service Orange Money. Réessayez dans quelques instants.',
-};
-
+/** @deprecated use `getPaymentErrorMessage` from `@/utils/paymentErrors` */
 export function getFailureMessage(reason?: string | null): string {
-  if (!reason) return 'Une erreur est survenue. Veuillez réessayer.';
-  return FAILURE_REASON_MESSAGES[reason] ?? reason;
-}
-
-export function providerIdToDbMethod(id: PaymentProviderId): string {
-  const map: Record<PaymentProviderId, string> = {
-    orange_money: 'Orange Money',
-    mpesa: 'M-Pesa',
-    airtel_money: 'Airtel Money',
-    card: 'Bank',
-    bank: 'Bank',
-  };
-  return map[id];
-}
-
-export function isMobileMoneyProvider(id: PaymentProviderId): boolean {
-  return id === 'orange_money' || id === 'mpesa' || id === 'airtel_money';
+  return getPaymentErrorMessage(reason);
 }
