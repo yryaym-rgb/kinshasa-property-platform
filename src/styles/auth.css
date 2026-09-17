@@ -1070,7 +1070,8 @@
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: var(--drc-gray-400);
+  /* 12 px text on white: gray-500 clears WCAG AA (5.6:1); gray-400 did not (2.6:1). */
+  color: var(--drc-gray-500);
 }
 
 .auth-divider::before,

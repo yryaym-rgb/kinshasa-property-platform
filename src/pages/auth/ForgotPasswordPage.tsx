@@ -186,66 +186,66 @@ export function ForgotPasswordPage() {
             />
           </div>
 
-          <form
-            id={`forgot-tab-panel-${method}`}
-            role="tabpanel"
-            aria-labelledby={`forgot-tab-${method}`}
-            className={cn('auth-form mt-6', shakeProps.className)}
-            onAnimationEnd={shakeProps.onAnimationEnd}
-            onSubmit={(e) => void handleSubmit(e)}
-            noValidate
-          >
-            {method === 'phone' ? (
-              <PhoneInput
-                key="phone"
-                ref={identifierRef}
-                id="forgot-phone"
-                value={phone}
-                onChange={setPhone}
-                error={errors.phone ? t(errors.phone) : undefined}
-                help={t('forgot.help.phone')}
-                autoFocus
-                required
-              />
-            ) : (
-              <TextField
-                key="email"
-                ref={identifierRef}
-                id="forgot-email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                autoCapitalize="off"
-                label={t('login.email.label')}
-                placeholder={t('login.email.placeholder')}
-                icon={<AtIcon size={20} />}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                error={errors.email ? t(errors.email) : undefined}
-                help={t('forgot.help.email')}
-                autoFocus
-                required
-              />
-            )}
-
-            {formError ? (
-              <Alert>{formError}</Alert>
-            ) : resetLock.locked ? (
-              <Alert tone="warn">{t('common.error.tooMany', { duration: formatRemaining(resetLock.remainingMs) })}</Alert>
-            ) : null}
-
-            <AuthButton
-              type="submit"
-              loading={submitting}
-              loadingLabel={t('forgot.submitting')}
-              disabled={resetLock.locked}
-              icon={<ArrowRightIcon size={18} />}
-              iconPosition="right"
-              arrow
+          {/* `tabpanel` is not an allowed role on <form>, so the panel is a wrapper. */}
+          <div id={`forgot-tab-panel-${method}`} role="tabpanel" aria-labelledby={`forgot-tab-${method}`}>
+            <form
+              className={cn('auth-form mt-6', shakeProps.className)}
+              onAnimationEnd={shakeProps.onAnimationEnd}
+              onSubmit={(e) => void handleSubmit(e)}
+              noValidate
             >
-              {t('forgot.submit')}
-            </AuthButton>
-          </form>
+              {method === 'phone' ? (
+                <PhoneInput
+                  key="phone"
+                  ref={identifierRef}
+                  id="forgot-phone"
+                  value={phone}
+                  onChange={setPhone}
+                  error={errors.phone ? t(errors.phone) : undefined}
+                  help={t('forgot.help.phone')}
+                  autoFocus
+                  required
+                />
+              ) : (
+                <TextField
+                  key="email"
+                  ref={identifierRef}
+                  id="forgot-email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="off"
+                  label={t('login.email.label')}
+                  placeholder={t('login.email.placeholder')}
+                  icon={<AtIcon size={20} />}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  error={errors.email ? t(errors.email) : undefined}
+                  help={t('forgot.help.email')}
+                  autoFocus
+                  required
+                />
+              )}
+  
+              {formError ? (
+                <Alert>{formError}</Alert>
+              ) : resetLock.locked ? (
+                <Alert tone="warn">{t('common.error.tooMany', { duration: formatRemaining(resetLock.remainingMs) })}</Alert>
+              ) : null}
+  
+              <AuthButton
+                type="submit"
+                loading={submitting}
+                loadingLabel={t('forgot.submitting')}
+                disabled={resetLock.locked}
+                icon={<ArrowRightIcon size={18} />}
+                iconPosition="right"
+                arrow
+              >
+                {t('forgot.submit')}
+              </AuthButton>
+            </form>
+          </div>
 
           <TrustFooter />
         </div>
