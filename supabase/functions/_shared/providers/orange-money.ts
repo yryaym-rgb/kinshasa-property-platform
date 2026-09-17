@@ -13,8 +13,8 @@
  * Webhook : Orange POSTs {status, notif_token, txnid} to `notif_url`. There is
  *           no vendor HMAC; we secure the endpoint with our own shared secret
  *           in the `X-Signature` header (HMAC-SHA256 of raw body), configured
- *           on the OM side as a static header, plus the per-payment
- *           `notif_token` echo check done in payment-webhook.
+ *           on the OM side as a static header. The `notif_token` is kept as
+ *           the idempotency key of the delivery (`provider_event_id`).
  *
  * Every real HTTP call is guarded by `config.sandbox` and marked
  * `// TODO: Enable in production` — in sandbox the deterministic simulator
