@@ -1,4 +1,4 @@
-import { supabase } from '@/config/supabase';
+import { getSupabase } from '@/lib/lazySupabase';
 import { AUTH_CONFIG } from '@/config/app.config';
 import type { RegisterDraft } from '@/lib/authStorage';
 import type { UserProfileFormData } from '@/types';
@@ -60,6 +60,7 @@ export function isAuthError(error: unknown): error is AuthError {
 /* ── OTP ─────────────────────────────────────────────────────── */
 
 export async function sendOTP(phone: string, options: { shouldCreateUser?: boolean } = {}): Promise<void> {
+  const supabase = await getSupabase();
   const { error } = await supabase.auth.signInWithOtp({
     phone,
     options: { shouldCreateUser: options.shouldCreateUser ?? false, channel: 'sms' },
@@ -73,11 +74,13 @@ export async function sendOTP(phone: string, options: { shouldCreateUser?: boole
 
 /** Re-sends the sign-up confirmation SMS (distinct endpoint from a sign-in OTP). */
 export async function resendSignUpOTP(phone: string): Promise<void> {
+  const supabase = await getSupabase();
   const { error } = await supabase.auth.resend({ type: 'sms', phone });
   if (error && !/already|confirmed/i.test(error.message)) throw toAuthError(error);
 }
 
 export async function verifyOTP(phone: string, token: string) {
+  const supabase = await getSupabase();
   const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: 'sms' });
   if (error) throw toAuthError(error);
   if (!data.session) throw new AuthError('otp_invalid');
@@ -89,6 +92,7 @@ export async function verifyOTP(phone: string, token: string) {
 export async function signInWithPassword(
   credentials: { phone: string; password: string } | { email: string; password: string },
 ) {
+  const supabase = await getSupabase();
   const { data, error } = await supabase.auth.signInWithPassword(credentials);
   if (error) throw toAuthError(error);
   return data;
@@ -102,6 +106,7 @@ export async function signInWithPassword(
  * the phone has been verified (see `completeRegistration`).
  */
 export async function signUpWithPhone(input: { phone: string; password: string; fullName: string; role: string }): Promise<void> {
+  const supabase = await getSupabase();
   const { error } = await supabase.auth.signUp({
     phone: input.phone,
     password: input.password,
@@ -114,6 +119,7 @@ export async function signUpWithPhone(input: { phone: string; password: string; 
 }
 
 export async function completeRegistration(userId: string, draft: RegisterDraft) {
+  const supabase = await getSupabase();
   if (!draft.role) throw new AuthError('unknown', 'role manquant');
 
   const profile: InsertTables<'users'> = {
@@ -141,6 +147,7 @@ export async function completeRegistration(userId: string, draft: RegisterDraft)
 
 /** Uploads the identity document; failures are non-fatal for the sign-up itself. */
 export async function uploadKycDocument(userId: string, file: File): Promise<string | null> {
+  const supabase = await getSupabase();
   const extension = file.name.split('.').pop()?.toLowerCase() ?? 'bin';
   const path = `${userId}/identity-${Date.now()}.${extension}`;
   const { error } = await supabase.storage.from(AUTH_CONFIG.kycBucket).upload(path, file, { upsert: true, contentType: file.type });
@@ -156,6 +163,7 @@ export async function uploadKycDocument(userId: string, file: File): Promise<str
 
 /** Attaches an email to the account; Supabase sends the verification link. */
 export async function requestEmailVerification(email: string): Promise<void> {
+  const supabase = await getSupabase();
   const { error } = await supabase.auth.updateUser({ email });
   if (error && !/already|exists/i.test(error.message)) throw toAuthError(error);
 }
@@ -163,6 +171,7 @@ export async function requestEmailVerification(email: string): Promise<void> {
 /* ── Password reset ──────────────────────────────────────────── */
 
 export async function resetPasswordByEmail(email: string): Promise<void> {
+  const supabase = await getSupabase();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/reset-password`,
   });
@@ -171,6 +180,7 @@ export async function resetPasswordByEmail(email: string): Promise<void> {
 }
 
 export async function updatePassword(password: string): Promise<void> {
+  const supabase = await getSupabase();
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw toAuthError(error);
 }
@@ -178,6 +188,7 @@ export async function updatePassword(password: string): Promise<void> {
 /* ── Profile & session ───────────────────────────────────────── */
 
 export async function fetchUserProfile(userId: string) {
+  const supabase = await getSupabase();
   const { data, error } = await supabase.from('users').select('*, bailleurs(*)').eq('id', userId).single();
   if (error) throw toAuthError(error);
   const { bailleurs, ...user } = data;
@@ -188,6 +199,7 @@ export async function fetchUserProfile(userId: string) {
 }
 
 export async function updateProfile(userId: string, data: UserProfileFormData) {
+  const supabase = await getSupabase();
   const { data: updated, error } = await supabase
     .from('users')
     .update({
@@ -205,11 +217,13 @@ export async function updateProfile(userId: string, data: UserProfileFormData) {
 }
 
 export async function logout(): Promise<void> {
+  const supabase = await getSupabase();
   const { error } = await supabase.auth.signOut();
   if (error) throw toAuthError(error);
 }
 
 export async function refreshSession() {
+  const supabase = await getSupabase();
   const { data, error } = await supabase.auth.refreshSession();
   if (error) throw toAuthError(error);
   return data;
