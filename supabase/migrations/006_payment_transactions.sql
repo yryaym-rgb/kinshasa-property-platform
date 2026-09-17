@@ -280,6 +280,61 @@ $$;
 REVOKE ALL ON FUNCTION public.expire_stale_payments() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.expire_stale_payments() TO service_role;
 
+-- -----------------------------------------------------------------------------
+-- User cancellation — the only state change a client may request directly.
+-- The frontend never writes `paiements`; it calls this RPC which checks that
+-- the caller is the payer (or staff) and that the state machine allows
+-- USER_CANCELLED from the current state.
+-- -----------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.cancel_own_payment(p_paiement_id uuid, p_reason text DEFAULT NULL)
+RETURNS public.paiements
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_row public.paiements;
+  v_uid uuid := auth.uid();
+  v_allowed boolean;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'unauthorized' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT p.* INTO v_row FROM public.paiements p WHERE p.id = p_paiement_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'payment_not_found' USING ERRCODE = 'P0002';
+  END IF;
+
+  SELECT (c.locataire_id = v_uid) OR public.is_staff() OR v_row.initiated_by = v_uid
+    INTO v_allowed
+  FROM public.contrats c WHERE c.id = v_row.contrat_id;
+
+  IF NOT coalesce(v_allowed, false) THEN
+    RAISE EXCEPTION 'forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  -- Mirrors the TypeScript transition table: USER_CANCELLED is legal from
+  -- draft, validating, pending and requires_action only.
+  IF v_row.state NOT IN ('draft', 'validating', 'pending', 'requires_action') THEN
+    RAISE EXCEPTION 'invalid_transition: USER_CANCELLED from %', v_row.state USING ERRCODE = 'P0001';
+  END IF;
+
+  RETURN public.transition_payment_state(
+    p_paiement_id, v_row.state, 'cancelled', 'USER_CANCELLED',
+    coalesce(p_reason, 'Annulé par l''utilisateur'), 'user:' || v_uid::text, NULL,
+    '{"failure_reason": "user_cancelled"}'::jsonb
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.cancel_own_payment(uuid, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.cancel_own_payment(uuid, text) TO authenticated, service_role;
+
+COMMENT ON FUNCTION public.cancel_own_payment IS
+  'Lets the payer (or staff) cancel an in-flight payment through the state machine. Guarded by ownership + transition table.';
+
 -- Realtime: the frontend hybrid hook subscribes to UPDATE events on paiements.
 DO $$
 BEGIN

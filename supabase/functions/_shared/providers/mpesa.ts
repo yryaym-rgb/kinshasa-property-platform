@@ -127,7 +127,7 @@ export class MpesaProvider extends BaseProvider {
     return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
   }
 
-  private async session(config: ProviderConfig): Promise<string> {
+  private session(config: ProviderConfig): Promise<string> {
     return getCachedToken(`mpesa:${config.merchantId}`, async () => {
       // TODO: Enable in production.
       const encrypted = await this.encryptApiKey(config);

@@ -39,6 +39,10 @@ export class Logger {
     this.context = context;
   }
 
+  get requestId(): string {
+    return this.context.requestId;
+  }
+
   child(extra: Partial<LogContext>): Logger {
     return new Logger({ ...this.context, ...extra });
   }

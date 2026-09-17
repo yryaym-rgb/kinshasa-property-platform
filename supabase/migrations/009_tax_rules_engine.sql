@@ -12,6 +12,14 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
+-- 0. Tax status: refunds cancel the obligation (never delete the row)
+--    NB: the new value is not referenced elsewhere in this file (Postgres
+--    forbids using a freshly added enum value in the same transaction).
+-- -----------------------------------------------------------------------------
+
+ALTER TYPE public.tax_status ADD VALUE IF NOT EXISTS 'annule';
+
+-- -----------------------------------------------------------------------------
 -- 1. Rename legacy columns to the engine vocabulary (French, matches spec)
 -- -----------------------------------------------------------------------------
 
@@ -123,6 +131,7 @@ CREATE TABLE IF NOT EXISTS public.calculs_fiscaux (
   detail_calcul       jsonb,                                  -- CalculationDetail[] steps
   reference_legale    text,
   calculation_version varchar(20) NOT NULL DEFAULT '1.0.0',
+  notes               text,                                   -- e.g. cancellation after refund
   created_by          uuid REFERENCES public.users (id) ON DELETE SET NULL,
   created_at          timestamptz NOT NULL DEFAULT now(),
 

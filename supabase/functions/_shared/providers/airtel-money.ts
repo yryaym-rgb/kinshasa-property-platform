@@ -90,7 +90,7 @@ export class AirtelMoneyProvider extends BaseProvider {
     super('airtel_money', 'Airtel Money');
   }
 
-  private async token(config: ProviderConfig): Promise<string> {
+  private token(config: ProviderConfig): Promise<string> {
     return getCachedToken(`airtel:${config.apiKey}`, async () => {
       // TODO: Enable in production.
       const { status, data } = await httpJson<AirtelTokenResponse>(this.key, `${config.baseUrl}/auth/oauth2/token`, {

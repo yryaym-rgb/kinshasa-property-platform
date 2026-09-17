@@ -91,7 +91,7 @@ export class OrangeMoneyProvider extends BaseProvider {
     super('orange_money', 'Orange Money');
   }
 
-  private async token(config: ProviderConfig): Promise<string> {
+  private token(config: ProviderConfig): Promise<string> {
     return getCachedToken(`om:${config.merchantId}`, async () => {
       // TODO: Enable in production — real OAuth call to Orange.
       const basic = btoa(`${config.apiKey}:${config.apiSecret}`);
@@ -169,18 +169,18 @@ export class OrangeMoneyProvider extends BaseProvider {
     };
   }
 
-  async refund(config: ProviderConfig, txId: string, amount: number, reason: string): Promise<ProviderRefundResponse> {
-    if (config.sandbox) return sandboxRefund('OM', txId, amount);
+  refund(config: ProviderConfig, txId: string, amount: number, reason: string): Promise<ProviderRefundResponse> {
+    if (config.sandbox) return Promise.resolve(sandboxRefund('OM', txId, amount));
 
     // TODO: Enable in production — OM WebPayment has no refund endpoint; the
     // Merchant Payment API "refund" (or back-office) must be wired here. Until
     // then we return `pending` so the ops team completes it manually.
-    return {
+    return Promise.resolve({
       providerRefundId: `OM-RFD-MANUAL-${Date.now().toString(36)}`,
       status: 'pending',
       message: `Remboursement à traiter manuellement dans le back-office Orange Money (${reason})`,
       raw: { manual: true, txId, amount, reason },
-    };
+    });
   }
 
   parseWebhook(payload: unknown, _headers: Headers): ParsedWebhook | null {
