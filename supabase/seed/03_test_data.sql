@@ -359,12 +359,12 @@ INSERT INTO public.impots (
   'f0000000-0000-4000-8000-000000000001',
   'e0000000-0000-4000-8000-000000000001',
   'd0000000-0000-4000-8000-000000000001',
-  119000.00,
-  0.1400,
+  85000.00,
+  0.1000,
   'calcule',
   '2025-09',
   now(),
-  (SELECT id FROM public.regles_fiscales WHERE name = 'Gombe — Appartements haut standing' LIMIT 1)
+  (SELECT id FROM public.regles_fiscales WHERE nom = 'Impôt sur revenus locatifs — résidentiel' LIMIT 1)
 )
 ON CONFLICT (id) DO NOTHING;
 

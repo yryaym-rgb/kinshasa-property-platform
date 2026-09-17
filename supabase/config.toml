@@ -1,0 +1,76 @@
+# eLoyer Kinshasa — Supabase project configuration
+# Reference: https://supabase.com/docs/guides/local-development/cli/config
+
+project_id = "moxfwfxmdctkvjbfvxgx"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.seed]
+enabled = true
+# Order matters: communes → (legacy no-op) → DRC tax rules → test data.
+sql_paths = [
+  "./seed/01_communes.sql",
+  "./seed/02_tax_rules.sql",
+  "./seed/03_tax_rules_drc.sql",
+  "./seed/03_test_data.sql",
+]
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173/reset-password"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+
+# ─── Edge Functions ────────────────────────────────────────────────────────
+# Secrets (API keys, webhook secrets) are set with `supabase secrets set` or in
+# the Dashboard → Edge Functions → Secrets. Never commit them.
+
+[functions.payment-initiate]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.payment-verify]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.payment-refund]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+# Webhooks come from the mobile-money operators, not from a logged-in user.
+# Authenticity is established by the HMAC signature instead (see
+# docs/PAYMENT_WEBHOOKS.md).
+[functions.payment-webhook]
+verify_jwt = false
+import_map = "./functions/deno.json"
+
+[functions.tax-calculate]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.tax-recalculate]
+verify_jwt = true
+import_map = "./functions/deno.json"
