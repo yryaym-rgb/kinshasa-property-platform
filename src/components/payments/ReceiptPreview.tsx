@@ -88,6 +88,12 @@ export function ReceiptPreview({ data, showQr = true, className }: ReceiptPrevie
             <span className="font-mono text-xs">{data.providerReference}</span>
           </div>
         )}
+        {data.breakdown.legalReference && (
+          <p className="pt-1 text-xs text-[var(--color-muted-foreground)]">Base légale de l’impôt : {data.breakdown.legalReference}</p>
+        )}
+        {data.breakdown.estimated && (
+          <p className="pt-1 text-xs text-amber-700">Montants estimés — le calcul fiscal définitif est en cours.</p>
+        )}
       </div>
 
       {showQr && (

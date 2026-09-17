@@ -87,6 +87,8 @@ export interface PaymentWizardState {
   idempotencyKey?: string;
   paymentId?: string;
   failureReason?: string;
+  /** Message returned by the operator at initiation (e.g. "Confirmez sur votre téléphone"). */
+  providerMessage?: string;
 }
 
 /** @deprecated use `getPaymentErrorMessage` from `@/utils/paymentErrors` */

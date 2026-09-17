@@ -34,8 +34,9 @@ export async function getTaxRules(): Promise<RegleFiscale[]> {
   const { data, error } = await supabase
     .from('regles_fiscales')
     .select('*')
-    .eq('active', true)
-    .order('effective_from', { ascending: false });
+    .eq('is_active', true)
+    .order('priorite', { ascending: true })
+    .order('date_debut', { ascending: false });
 
   if (error) throw new Error(error.message);
   return data ?? [];

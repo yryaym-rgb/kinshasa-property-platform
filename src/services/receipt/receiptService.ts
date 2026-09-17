@@ -1,7 +1,5 @@
 import { supabase } from '@/config/supabase';
-import { generateReceiptCode } from '@/lib/utils';
 import type { Recu, Paiement } from '@/types/database.types';
-import type { TaxCalculationResult } from '@/services/tax/taxService';
 
 export interface ReceiptWithDetails extends Recu {
   paiement?: Paiement;
@@ -89,26 +87,20 @@ export const receiptService = {
     return results;
   },
 
-  async generateReceipt(
-    payment: Paiement,
-    taxCalc: TaxCalculationResult,
-  ): Promise<Recu> {
-    const code = generateReceiptCode(Math.floor(Math.random() * 999999));
-    const { data, error } = await supabase
-      .from('recus')
-      .insert({
-        code,
-        paiement_id: payment.id,
-        contrat_id: payment.contrat_id,
-        montant: payment.montant,
-        currency: payment.currency,
-        metadata: JSON.parse(JSON.stringify({ tax_calculation: taxCalc })),
-      })
-      .select()
-      .single();
-
-    if (error) throw new Error(error.message);
-    return data;
+  /**
+   * Receipts are created server-side by the post-success pipeline
+   * (supabase/functions/_shared/pipeline.ts → step `receipt`). The frontend
+   * only reads them; this waits for the pipeline to catch up (max ~10 s).
+   */
+  async waitForReceipt(paymentId: string, options?: { attempts?: number; intervalMs?: number }) {
+    const attempts = options?.attempts ?? 5;
+    const intervalMs = options?.intervalMs ?? 2000;
+    for (let i = 0; i < attempts; i++) {
+      const receipt = await this.getReceiptByPaymentId(paymentId);
+      if (receipt) return receipt;
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    return null;
   },
 
   async downloadReceiptPdf(receiptId: string): Promise<void> {

@@ -41,18 +41,10 @@ export interface PaymentProviderRecord {
   updated_at: string;
 }
 
-/** `paiements` row with the Module-4 state machine columns. */
-export interface PaymentRecord extends Paiement {
+/** `paiements` row with the Module-4 state machine columns strongly typed. */
+export interface PaymentRecord extends Omit<Paiement, 'state' | 'previous_state' | 'pipeline'> {
   state: PaymentState;
   previous_state: PaymentState | null;
-  state_changed_at: string;
-  attempt_count: number;
-  last_attempt_at: string | null;
-  last_verified_at: string | null;
-  expires_at: string | null;
-  client_ip: string | null;
-  user_agent: string | null;
-  initiated_by: string | null;
   pipeline: PipelineStatus;
 }
 
