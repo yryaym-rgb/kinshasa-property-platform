@@ -8,7 +8,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { IDS, RENT } from './support/fixtures';
+import { IDS, RENT } from './support/paymentTaxFixtures';
 import { installMockSupabase, realConsoleErrors } from './support/mockSupabase';
 
 const RENT_LABEL = /850\s?000/;
@@ -95,8 +95,9 @@ test.describe('Paiement du loyer (locataire)', () => {
     expect(backend.callsTo('tax-calculate (pipeline)')).toHaveLength(1);
     const payment = [...backend.payments.values()][0]!;
     expect(payment.state).toBe('succeeded');
-    expect((payment.pipeline as Record<string, { status: string }>).tax.status).toBe('done');
-    expect((payment.pipeline as Record<string, { status: string }>).receipt.status).toBe('done');
+    const pipeline = payment.pipeline as Record<string, { status: string }>;
+    expect(pipeline.tax?.status).toBe('done');
+    expect(pipeline.receipt?.status).toBe('done');
 
     expect(realConsoleErrors(backend)).toEqual([]);
   });

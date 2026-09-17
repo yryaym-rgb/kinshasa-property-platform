@@ -14,7 +14,19 @@ const ENTRY_ROUTE_MODULES: Record<string, string> = {
 };
 
 /** Routes whose static shell in index.html is complete enough to be the page's LCP. */
-const PAINT_FIRST_ROUTES = Object.keys(ENTRY_ROUTE_MODULES).filter((route) => route !== '/');
+const PAINT_FIRST_ROUTES = Object.keys(ENTRY_ROUTE_MODULES);
+
+/**
+ * Shell routes whose LCP is an image rather than text. Their shell script in
+ * index.html dispatches `eloyer:shellpainted` on `document` once that image has
+ * been presented; the loader waits for it so script and stylesheet fetches
+ * never share bandwidth with the LCP image.
+ */
+const PAINT_FIRST_EVENT_ROUTES = ['/'];
+const SHELL_PAINTED_EVENT = 'eloyer:shellpainted';
+
+/** Upper bound on how long the loader defers the bundle for a slow LCP image. */
+const PAINT_FIRST_EVENT_CAP_MS = 1500;
 
 /** Chunks the register wizard only needs after step 1 — fetched at idle priority. */
 const REGISTER_STEP_DIR = 'src/pages/auth/register/steps/';
@@ -38,9 +50,11 @@ interface BundleChunk {
  *   module-preloaded from the HTML, so the route renders after one round trip
  *   instead of a waterfall (entry → page chunk → its imports).
  * - On /register the lazy step chunks are `prefetch`ed at idle priority.
- * - On routes with a full static shell, all of the above starts one frame after
- *   the shell has painted, so the shell's paint is never contended by script
- *   fetching and compilation (paint-first). Elsewhere it starts immediately.
+ * - On routes with a full static shell, all of the above starts only once the
+ *   shell has been *presented* (the `first-contentful-paint` performance entry,
+ *   or the shell's own paint event for image LCPs), so the shell's paint is never
+ *   contended by script fetching and compilation (paint-first). Elsewhere it
+ *   starts immediately.
  */
 function paintFirstLoader(): Plugin {
   return {
@@ -102,7 +116,16 @@ function paintFirstLoader(): Plugin {
             return '';
           });
 
-        const data = JSON.stringify({ e: scriptSrc, m: preloads, c: styles, r: routes, p: PAINT_FIRST_ROUTES });
+        const data = JSON.stringify({
+          e: scriptSrc,
+          m: preloads,
+          c: styles,
+          r: routes,
+          p: PAINT_FIRST_ROUTES,
+          w: PAINT_FIRST_EVENT_ROUTES,
+          v: SHELL_PAINTED_EVENT,
+          t: PAINT_FIRST_EVENT_CAP_MS,
+        });
         const loader = `<script>(function(d){var p=location.pathname.replace(/\\/+$/,'')||'/';var r=d.r[p]||{};var h=document.head;
 function link(rel,href,as){var l=document.createElement('link');l.rel=rel;l.href=href;if(as)l.as=as;l.crossOrigin='';h.appendChild(l);return l}
 function load(){if(load.done)return;load.done=1;
@@ -111,7 +134,11 @@ d.m.concat(r.preload||[]).forEach(function(m){link('modulepreload',m)});
 d.e.forEach(function(e){var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=e;h.appendChild(s)});
 (r.prefetch||[]).forEach(function(f){link('prefetch',f,'script')})}
 if(d.p.indexOf(p)===-1){load();return}
-requestAnimationFrame(function(){requestAnimationFrame(load)});setTimeout(load,300)})(${data})</script>`;
+if(d.w.indexOf(p)!==-1){document.addEventListener(d.v,load,{once:true});setTimeout(load,d.t);return}
+var t=window.PerformanceObserver&&PerformanceObserver.supportedEntryTypes;
+if(t&&t.indexOf('paint')!==-1)new PerformanceObserver(function(l,o){if(!l.getEntries().some(function(e){return e.name==='first-contentful-paint'}))return;o.disconnect();load()}).observe({type:'paint',buffered:true});
+else requestAnimationFrame(function(){requestAnimationFrame(load)});
+setTimeout(load,300)})(${data})</script>`;
         const noscript = styles.map((href) => `<noscript><link rel="stylesheet" crossorigin href="${href}"></noscript>`).join('');
         return html.replace('</head>', `    ${loader}${noscript}\n  </head>`);
       },

@@ -7,7 +7,7 @@
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { IDS } from './support/fixtures';
+import { IDS } from './support/paymentTaxFixtures';
 import { installMockSupabase, realConsoleErrors } from './support/mockSupabase';
 
 /** DataTable renders a <table> on md+ and one card per row below; both carry the same cells. */

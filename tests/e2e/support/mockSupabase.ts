@@ -26,7 +26,7 @@ import {
   TAX_RULES,
   TAX_SUMMARY,
   TENANT_USER,
-} from './fixtures';
+} from './paymentTaxFixtures';
 
 type Json = Record<string, unknown>;
 type Row = Record<string, unknown>;
@@ -562,7 +562,9 @@ export async function installMockSupabase(page: Page, options: MockOptions): Pro
           return reply(route, 200, scoped[0]);
         }
         const prefer = request.headers()['prefer'] ?? '';
-        const headers = prefer.includes('count=') ? { 'content-range': `0-${Math.max(scoped.length - 1, 0)}/${scoped.length}` } : {};
+        const headers: Record<string, string> = prefer.includes('count=')
+          ? { 'content-range': `0-${Math.max(scoped.length - 1, 0)}/${scoped.length}` }
+          : {};
         return reply(route, 200, scoped, headers);
       }
 

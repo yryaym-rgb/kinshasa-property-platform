@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "test:edge": "deno task --config supabase/functions/deno.json test",
     "check:edge": "deno task --config supabase/functions/deno.json check",
     "sync:edge": "node scripts/sync-edge-shared.mjs",
