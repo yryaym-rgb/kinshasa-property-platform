@@ -181,3 +181,4 @@ SELECT * FROM payment_pipeline_jobs WHERE paiement_id = '<uuid>';
 
 - `deno test` (`supabase/functions/_shared/`) : signature HMAC (valide, invalide, préfixe `sha256=`, comparaison temps constant), parsing des payloads par opérateur.
 - `npm run test` (vitest) : machine à états, mapping erreurs, politique de retry, dérive du miroir `_shared/stateMachine.ts`.
+- `npm run test:e2e` (Playwright, `tests/e2e/`) : parcours complet locataire sur un backend Supabase simulé — `payment-initiate` → écran de traitement (realtime + polling) → `payment-verify` règle le paiement → reçu avec l'impôt et sa base légale ; échec opérateur (message français, bouton Réessayer) ; annulation via `cancel_own_payment` uniquement dans les états autorisés par la machine à états.

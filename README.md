@@ -123,7 +123,11 @@ supabase/
 2. Développer avec `npm run dev`
 3. Vérifier le build : `npm run build`
 4. Linter : `npm run lint`
-5. Commit et PR
+5. Tests :
+   - `npm run test` — tests unitaires (vitest) : machine à états des paiements, mapping des erreurs, politique de retry, estimation fiscale
+   - `npm run check:edge` et `npm run test:edge` — type-check et tests Deno des Edge Functions (signature HMAC, parsing webhooks, moteur fiscal)
+   - `npm run test:e2e` — parcours Playwright (paiement avec calcul d'impôt, tableau de bord fiscal, simulateur) sur un backend Supabase simulé, sans identifiants (`npx playwright install chromium` au premier lancement)
+6. Commit et PR
 
 ## Déploiement
 

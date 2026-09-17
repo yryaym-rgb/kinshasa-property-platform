@@ -346,4 +346,4 @@ supabase functions deploy tax-calculate
 supabase functions deploy tax-recalculate
 ```
 
-Vérifications locales : `npm run build`, `npm run test`, `deno task check` (dans `supabase/functions`), `npm run sync:edge -- --check`.
+Vérifications locales : `npm run build`, `npm run test`, `npm run test:edge`, `npm run check:edge`, `npm run sync:edge:check`, `npm run test:e2e`.
