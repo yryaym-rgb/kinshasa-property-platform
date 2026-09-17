@@ -16,6 +16,8 @@ import {
   FileCheck,
   Wallet,
   GitCompare,
+  AlertTriangle,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/config/routes';
@@ -70,6 +72,8 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'Recettes', href: ROUTES.FISCAL.REVENUE, icon: Wallet },
     { label: 'Rapprochements', href: ROUTES.FISCAL.RECONCILIATION, icon: GitCompare },
     { label: 'Contrôles', href: ROUTES.FISCAL.CONTROLS, icon: Shield },
+    { label: 'Anomalies', href: ROUTES.FISCAL.ANOMALIES, icon: AlertTriangle },
+    { label: 'Prévisions', href: ROUTES.FISCAL.FORECAST, icon: TrendingUp },
   ],
   agence: [
     { label: 'Tableau de bord', href: ROUTES.BAILLEUR.DASHBOARD, icon: LayoutDashboard },

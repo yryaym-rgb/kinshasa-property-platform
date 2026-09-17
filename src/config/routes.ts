@@ -25,6 +25,8 @@ export const ROUTES = {
     PAYMENTS: '/bailleur/paiements',
     RECEIPTS: '/bailleur/recus',
     TAXES: '/bailleur/fiscalite',
+    TAX_SIMULATOR: '/bailleur/fiscalite/simulateur',
+    TAX_DETAIL: '/bailleur/fiscalite/:id',
     REPORTS: '/bailleur/rapports',
     PROFILE: '/bailleur/profil',
   },
@@ -63,6 +65,8 @@ export const ROUTES = {
     REVENUE: '/fiscal/recettes',
     RECONCILIATION: '/fiscal/rapprochements',
     CONTROLS: '/fiscal/controles',
+    ANOMALIES: '/fiscal/anomalies',
+    FORECAST: '/fiscal/previsions',
   },
 } as const;
 
