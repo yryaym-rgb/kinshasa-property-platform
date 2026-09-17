@@ -5,6 +5,7 @@ import { DetailPageSkeleton } from '@/components/common/SkeletonLoaders';
 import { Stepper } from '@/components/payments/PaymentWizard/Stepper';
 import { PaymentSummary } from '@/components/payments/PaymentSummary';
 import { PaymentMethodSelector } from '@/components/payments/PaymentMethodSelector';
+import { PaymentProcessing } from '@/components/payments/PaymentProcessing';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +18,7 @@ import { isMobileMoneyProvider } from '@/services/payment/types';
 import type { PaymentMethod, PaymentProviderId } from '@/services/payment/types';
 
 const STEP_MAP = { select: 1, amount: 2, method: 3, confirm: 4, processing: 4, success: 4, failed: 4 };
+const PHONE_RE = /^\+243[0-9]{9}$/;
 
 export function PaymentPage() {
   const { user } = useAuth();
@@ -27,16 +29,21 @@ export function PaymentPage() {
     payment,
     setPayment,
     initiate,
+    onPaymentTerminal,
     processingStatus,
     computeBreakdown,
     generateIdempotencyKey,
   } = usePayment();
 
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
+  const [methodsError, setMethodsError] = useState<string | null>(null);
   const activeContracts = (contracts ?? []).filter((c) => c.status === 'actif');
 
   useEffect(() => {
-    paymentService.getPaymentMethods().then(setMethods);
+    paymentService
+      .getPaymentMethods()
+      .then(setMethods)
+      .catch(() => setMethodsError('Impossible de charger les modes de paiement. Réessayez.'));
   }, []);
 
   useEffect(() => {
@@ -49,7 +56,7 @@ export function PaymentPage() {
         amount: computeBreakdown(rent).total,
         periode: getCurrentPeriod(),
         phone: user?.phone,
-        idempotencyKey: generateIdempotencyKey(),
+        idempotencyKey: generateIdempotencyKey(c.id),
       });
       setStep('amount');
     }
@@ -71,28 +78,44 @@ export function PaymentPage() {
       amount: breakdown.total,
       periode: getCurrentPeriod(),
       phone: user?.phone,
-      idempotencyKey: generateIdempotencyKey(),
+      idempotencyKey: generateIdempotencyKey(c.id),
     });
     setStep('amount');
   };
 
   const handleMethodSelect = (method: PaymentProviderId) => {
     const rent = payment.rentAmount ?? 0;
-    const breakdown = computeBreakdown(rent, method);
+    const breakdown = computeBreakdown(rent, method, methods);
     setPayment({ method, amount: breakdown.total });
   };
 
+  const selectedMethod = methods.find((m) => m.id === payment.method);
+  const needsPhone = payment.method ? (selectedMethod?.requiresPhone ?? isMobileMoneyProvider(payment.method)) : false;
+  const phoneValid = !needsPhone || PHONE_RE.test(payment.phone ?? '');
+
   const handleContinueAmount = () => setStep('method');
   const handleContinueMethod = () => {
-    if (!payment.method) return;
-    const breakdown = computeBreakdown(payment.rentAmount ?? 0, payment.method);
+    if (!payment.method || !phoneValid) return;
+    const breakdown = computeBreakdown(payment.rentAmount ?? 0, payment.method, methods);
     setPayment({ amount: breakdown.total });
     setStep('confirm');
   };
 
   if (step === 'processing') {
+    if (payment.paymentId) {
+      return (
+        <div className="flex min-h-[60vh] flex-col items-center justify-center">
+          <PaymentProcessing
+            paymentId={payment.paymentId}
+            providerName={selectedMethod?.name}
+            providerMessage={payment.providerMessage}
+            onTerminal={onPaymentTerminal}
+          />
+        </div>
+      );
+    }
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 text-center" data-testid="payment-processing" data-state="initiating">
         <motion.div
           animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
@@ -161,7 +184,7 @@ export function PaymentPage() {
                     className="mt-1 w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-sm"
                   />
                 </div>
-                <PaymentSummary breakdown={computeBreakdown(payment.rentAmount ?? 0, payment.method)} />
+                <PaymentSummary breakdown={computeBreakdown(payment.rentAmount ?? 0, payment.method, methods)} />
                 <Button size="lg" className="w-full" onClick={handleContinueAmount}>Continuer</Button>
               </CardContent>
             </Card>
@@ -173,25 +196,35 @@ export function PaymentPage() {
             <Card>
               <CardHeader><CardTitle>Choisir le mode de paiement</CardTitle></CardHeader>
               <CardContent className="space-y-4">
+                {methodsError && <p role="alert" className="text-sm text-[var(--color-destructive)]">{methodsError}</p>}
                 <PaymentMethodSelector
                   methods={methods}
                   selected={payment.method ?? null}
                   onSelect={handleMethodSelect}
                 />
-                {payment.method && isMobileMoneyProvider(payment.method) && (
+                {needsPhone && (
                   <div>
                     <label htmlFor="phone" className="text-sm font-medium">Numéro Mobile Money</label>
                     <input
                       id="phone"
                       type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
                       value={payment.phone ?? ''}
                       onChange={(e) => setPayment({ phone: normalizePhone(e.target.value) })}
                       placeholder="+243 812 345 678"
+                      aria-invalid={payment.phone ? !phoneValid : undefined}
                       className="mt-1 w-full rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-sm"
                     />
+                    {payment.phone && !phoneValid && (
+                      <p className="mt-1 text-xs text-[var(--color-destructive)]">Format attendu : +243 suivi de 9 chiffres.</p>
+                    )}
                   </div>
                 )}
-                <Button size="lg" className="w-full" disabled={!payment.method} onClick={handleContinueMethod}>
+                {selectedMethod?.sandbox && (
+                  <p className="text-xs text-[var(--color-muted-foreground)]">Mode test : aucun débit réel ne sera effectué.</p>
+                )}
+                <Button size="lg" className="w-full" disabled={!payment.method || !phoneValid} onClick={handleContinueMethod}>
                   Continuer
                 </Button>
               </CardContent>
@@ -204,11 +237,14 @@ export function PaymentPage() {
             <Card>
               <CardHeader><CardTitle>Confirmation</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <PaymentSummary breakdown={computeBreakdown(payment.rentAmount ?? 0, payment.method)} />
+                <PaymentSummary breakdown={computeBreakdown(payment.rentAmount ?? 0, payment.method, methods)} />
+                <p className="text-xs text-[var(--color-muted-foreground)]">
+                  Montants estimés — l’impôt définitif est calculé par le moteur fiscal à la confirmation du paiement et figure sur le reçu.
+                </p>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-[var(--color-muted-foreground)]">Méthode</span>
-                    <span>{methods.find((m) => m.id === payment.method)?.name}</span>
+                    <span>{selectedMethod?.name}</span>
                   </div>
                   {payment.phone && (
                     <div className="flex justify-between">

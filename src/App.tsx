@@ -44,8 +44,33 @@ const AdminDashboard = lazy(() =>
   })),
 );
 const FiscalDashboard = lazy(() =>
-  import("@/pages/dashboard/PlaceholderPages").then((m) => ({
-    default: m.FiscalDashboard,
+  import("@/pages/fiscal/DashboardPage").then((m) => ({
+    default: m.FiscalDashboardPage,
+  })),
+);
+const FiscalAnomaliesPage = lazy(() =>
+  import("@/pages/fiscal/AnomaliesPage").then((m) => ({
+    default: m.AnomaliesPage,
+  })),
+);
+const FiscalForecastPage = lazy(() =>
+  import("@/pages/fiscal/ForecastPage").then((m) => ({
+    default: m.ForecastPage,
+  })),
+);
+const BailleurTaxDashboardPage = lazy(() =>
+  import("@/pages/bailleur/taxes/DashboardPage").then((m) => ({
+    default: m.TaxDashboardPage,
+  })),
+);
+const BailleurTaxDetailPage = lazy(() =>
+  import("@/pages/bailleur/taxes/DetailPage").then((m) => ({
+    default: m.TaxDetailPage,
+  })),
+);
+const BailleurTaxSimulatorPage = lazy(() =>
+  import("@/pages/bailleur/taxes/SimulatorPage").then((m) => ({
+    default: m.TaxSimulatorPage,
   })),
 );
 const PlaceholderPage = lazy(() =>
@@ -298,7 +323,27 @@ export default function App() {
               />
               <Route
                 path={ROUTES.BAILLEUR.TAXES}
-                element={<PlaceholderPage title="Fiscalité" />}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <BailleurTaxDashboardPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.TAX_SIMULATOR}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <BailleurTaxSimulatorPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.BAILLEUR.TAX_DETAIL}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <BailleurTaxDetailPage />
+                  </Suspense>
+                }
               />
               <Route
                 path={ROUTES.BAILLEUR.REPORTS}
@@ -456,7 +501,27 @@ export default function App() {
             <Route element={<FiscalLayout />}>
               <Route
                 path={ROUTES.FISCAL.DASHBOARD}
-                element={<FiscalDashboard />}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <FiscalDashboard />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.FISCAL.ANOMALIES}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <FiscalAnomaliesPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path={ROUTES.FISCAL.FORECAST}
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <FiscalForecastPage />
+                  </Suspense>
+                }
               />
               <Route
                 path={ROUTES.FISCAL.DECLARATIONS}

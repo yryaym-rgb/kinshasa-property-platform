@@ -5,7 +5,7 @@ export const InitiatePaymentSchema = z.object({
   contratId: z.string().uuid('Contrat invalide'),
   amount: z.number().positive('Le montant doit être positif'),
   rentAmount: z.number().positive('Le loyer doit être positif'),
-  method: z.enum(['orange_money', 'mpesa', 'airtel_money', 'card', 'bank'], {
+  method: z.enum(['orange_money', 'mpesa', 'airtel_money', 'card', 'bank_transfer'], {
     errorMap: () => ({ message: 'Méthode de paiement invalide' }),
   }),
   phone: z

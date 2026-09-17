@@ -154,8 +154,12 @@ tests/
 2. Développer avec `npm run dev`
 3. Vérifier le build : `npm run build`
 4. Linter : `npm run lint`
-5. Tests de bout en bout (landing → inscription → OTP → tableau de bord → déconnexion → connexion,
-   mobile et desktop, Supabase simulé en mémoire) : `npm run test:e2e`
+5. Tests :
+   - `npm run test` — tests unitaires (vitest) : machine à états des paiements, mapping des erreurs, politique de retry, estimation fiscale
+   - `npm run check:edge` et `npm run test:edge` — type-check et tests Deno des Edge Functions (signature HMAC, parsing webhooks, moteur fiscal)
+   - `npm run test:e2e` — parcours Playwright, mobile et desktop, sur un Supabase simulé en mémoire (sans identifiants ; `npx playwright install chromium` au premier lancement) :
+     - authentification : landing → inscription → OTP → tableau de bord → déconnexion → connexion
+     - paiement avec calcul d'impôt, tableau de bord fiscal du bailleur, simulateur fiscal
 6. Commit et PR
 
 ## Déploiement
@@ -175,6 +179,11 @@ Déployer le dossier `dist/` sur Vercel, Netlify ou infrastructure gouvernementa
 - [Architecture](docs/ARCHITECTURE.md)
 - [Base de données](docs/DATABASE.md)
 - [Flux d'authentification](docs/AUTH_FLOW.md)
+- [Architecture des paiements](docs/PAYMENT_ARCHITECTURE.md)
+- [Intégration Mobile Money](docs/MOBILE_MONEY_INTEGRATION.md)
+- [Webhooks de paiement](docs/PAYMENT_WEBHOOKS.md)
+- [Moteur fiscal](docs/TAX_ENGINE.md)
+- [Référentiel des règles fiscales](docs/TAX_RULES_REFERENCE.md)
 - [Performance — static shell, paint-first loader, polices](docs/PERFORMANCE.md)
 - [Recette sur appareil Android réel](docs/DEVICE_TESTING.md)
 - [Guide de contribution](docs/CONTRIBUTING.md)

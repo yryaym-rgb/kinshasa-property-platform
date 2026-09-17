@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseQuery } from '@/hooks/useSupabaseQuery';
 import { receiptService } from '@/services/receipt/receiptService';
-import { taxService } from '@/services/tax/taxService';
-import type { TaxCalculationResult } from '@/services/tax/taxService';
+import { estimateBreakdown, type TaxBreakdown } from '@/services/tax/taxService';
 import { ROUTES } from '@/config/routes';
 
 export function ReceiptDetailPage() {
@@ -39,9 +38,9 @@ export function ReceiptDetailPage() {
 
   const paiement = data.paiement;
   const logement = data.contrat?.logement as { type?: string; rooms?: number | null } | undefined;
-  const taxCalc = (data.metadata as { tax_calculation?: TaxCalculationResult })?.tax_calculation
-    ?? (paiement?.tax_calculation as unknown as TaxCalculationResult)
-    ?? taxService.calculateTax({ rentAmount: Number(paiement?.montant ?? data.montant), paymentMethod: 'mobile_money' });
+  const taxCalc = (data.metadata as { tax_calculation?: TaxBreakdown })?.tax_calculation
+    ?? (paiement?.tax_calculation as unknown as TaxBreakdown)
+    ?? estimateBreakdown({ rentAmount: Number(paiement?.montant ?? data.montant), paymentMethod: 'mobile_money' });
 
   const propertyLabel = logement
     ? `${logement.type}${logement.rooms ? ` ${logement.rooms} pièces` : ''}`

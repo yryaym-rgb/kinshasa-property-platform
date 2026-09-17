@@ -1,253 +1,165 @@
-import { supabase } from '@/config/supabase';
-import { generateTransactionReference, sleep } from '@/lib/utils';
-import { taxService } from '@/services/tax/taxService';
-import { receiptService } from '@/services/receipt/receiptService';
-import { getProvider, getAllProviders } from './providers';
-import {
-  type InitiatePaymentInput,
-  type PaymentMethod,
-  type PaymentResult,
-  type PaymentStatus,
-  providerIdToDbMethod,
-  isMobileMoneyProvider,
-} from './types';
-import type { Paiement, InsertTables } from '@/types/database.types';
+/**
+ * Frontend payment service — a thin, typed client of the payment Edge
+ * Functions. The browser NEVER writes `paiements` and never talks to a
+ * mobile-money operator: every mutation goes through
+ * payment-initiate / payment-verify / payment-refund (service role + audit),
+ * and user cancellation goes through the ownership-checked SQL RPC
+ * `cancel_own_payment`.
+ *
+ * Reads (payment list, receipt lookup, provider catalogue) use the RLS-scoped
+ * Supabase client directly.
+ */
 
-const IDEMPOTENCY_WINDOW_MS = 5 * 60 * 1000;
-const POLL_INTERVAL_MS = 2000;
-const MAX_POLL_DURATION_MS = 60000;
+import { supabase } from '@/config/supabase';
+import type { Paiement } from '@/types/database.types';
+import type {
+  InitiatePaymentRequest,
+  InitiatePaymentResponse,
+  PaymentMethod,
+  PaymentProviderKey,
+  PaymentProviderRecord,
+  PaymentRecord,
+  RefundPaymentRequest,
+  RefundPaymentResponse,
+  VerifyPaymentRequest,
+  VerifyPaymentResponse,
+} from '@/types/payment';
+import { isMobileMoneyProvider } from '@/types/payment';
+import { mapEdgeError, PaymentError } from '@/utils/paymentErrors';
+import { withRetry } from './retryPolicy';
+import type { InitiatePaymentInput, PaymentResult, PaymentStatus } from './types';
+import type { PaymentStateTransition } from './stateMachine';
+
+const PROVIDER_ICONS: Record<PaymentProviderKey, string> = {
+  orange_money: 'orange',
+  mpesa: 'mpesa',
+  airtel_money: 'airtel',
+  card: 'card',
+  bank_transfer: 'bank',
+};
+
+export function generateIdempotencyKey(contractId: string): string {
+  const rand = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10);
+  return `pay-${contractId.slice(0, 8)}-${Date.now()}-${rand}`;
+}
+
+async function invoke<TReq extends object, TRes>(name: string, body: TReq): Promise<TRes> {
+  const { data, error } = await supabase.functions.invoke<TRes>(name, { body: body as Record<string, unknown> });
+  if (error) throw await mapEdgeError(error);
+  if (data === null || data === undefined) throw new PaymentError('invalid_provider_response');
+  return data;
+}
 
 export const paymentService = {
-  async initiatePayment(input: InitiatePaymentInput): Promise<PaymentResult> {
-    const existing = await this.findByIdempotencyKey(input.idempotencyKey);
-    if (existing) {
-      if (existing.status === 'complete') {
-        const receipt = await receiptService.getReceiptByPaymentId(existing.id);
-        return {
-          status: 'success',
-          payment: { ...existing, receiptId: receipt?.id, receiptCode: receipt?.code },
-          providerReference: existing.provider_transaction_id ?? undefined,
-        };
-      }
-      if (existing.status === 'echoue') {
-        return { status: 'failed', failureReason: existing.failure_reason ?? 'provider_error', payment: existing as Paiement };
-      }
-    }
+  generateIdempotencyKey,
 
-    const { data: contract, error: contractError } = await supabase
-      .from('contrats')
-      .select('*, logement:logements(*)')
-      .eq('id', input.contratId)
-      .eq('locataire_id', input.tenantId)
-      .eq('status', 'actif')
-      .single();
-
-    if (contractError || !contract) {
-      throw new Error('Contrat introuvable ou inactif');
-    }
-
-    const paymentMethod = isMobileMoneyProvider(input.method)
-      ? 'mobile_money'
-      : input.method === 'card'
-        ? 'card'
-        : 'bank';
-
-    const taxCalc = taxService.calculateTax({
-      rentAmount: input.rentAmount,
-      paymentMethod,
-    });
-
-    const reference = generateTransactionReference();
-    const insert: InsertTables<'paiements'> & {
-      idempotency_key?: string;
-      tax_calculation?: Record<string, unknown>;
-    } = {
-      contrat_id: input.contratId,
-      montant: input.amount,
+  /**
+   * Creates the payment and hands it to the operator. Safe to retry: the
+   * idempotency key guarantees the same key → the same payment.
+   */
+  async initiatePayment(input: InitiatePaymentInput, options?: { signal?: AbortSignal }): Promise<PaymentResult> {
+    const idempotencyKey = input.idempotencyKey ?? generateIdempotencyKey(input.contratId);
+    const body: InitiatePaymentRequest = {
+      contractId: input.contratId,
+      amount: Math.round(input.amount),
+      rentAmount: Math.round(input.rentAmount),
       currency: input.currency,
-      method: providerIdToDbMethod(input.method) as InsertTables<'paiements'>['method'],
-      provider: getProvider(input.method).name,
+      method: input.method,
+      phone: input.phone,
       periode: input.periode,
-      reference,
-      status: 'en_cours',
-      metadata: { phone: input.phone, provider_id: input.method },
-      idempotency_key: input.idempotencyKey,
-      tax_calculation: JSON.parse(JSON.stringify(taxCalc)),
+      idempotencyKey,
+      description: input.description,
+      returnUrl: input.returnUrl ?? (typeof window !== 'undefined' ? `${window.location.origin}/locataire/paiements/succes` : undefined),
     };
 
-    const { data: payment, error: insertError } = await supabase
-      .from('paiements')
-      .insert(insert)
-      .select()
-      .single();
-
-    if (insertError) {
-      if (insertError.code === '23505') {
-        const dup = await this.findByIdempotencyKey(input.idempotencyKey);
-        if (dup) return { status: 'pending', payment: dup };
-      }
-      throw new Error(insertError.message);
-    }
-
-    const provider = getProvider(input.method);
-    const initResult = await provider.initiate({
-      amount: input.amount,
-      currency: input.currency,
-      phone: input.phone,
-      reference: payment.reference,
-      description: input.description ?? `Loyer ${input.periode}`,
-      metadata: { contratId: input.contratId },
+    return withRetry(() => invoke<InitiatePaymentRequest, InitiatePaymentResponse>('payment-initiate', body), {
+      idempotent: true,
+      signal: options?.signal,
+      policy: { maxAttempts: 3, baseDelayMs: 800, maxDelayMs: 4000 },
     });
-
-    await supabase
-      .from('paiements')
-      .update({ provider_transaction_id: initResult.providerTransactionId })
-      .eq('id', payment.id);
-
-    const verifyResult = await this.pollProvider(
-      provider,
-      initResult.providerTransactionId,
-    );
-
-    if (verifyResult.status === 'success') {
-      const updated = await this.completePayment(payment.id, {
-        providerTransactionId: initResult.providerTransactionId,
-        providerReference: verifyResult.providerReference,
-        paidAt: verifyResult.paidAt,
-        taxCalc,
-        contract,
-        tenantId: input.tenantId,
-      });
-      const receipt = await receiptService.getReceiptByPaymentId(updated.id);
-      return {
-        status: 'success',
-        payment: { ...updated, receiptId: receipt?.id, receiptCode: receipt?.code },
-        providerReference: verifyResult.providerReference,
-      };
-    }
-
-    const failureReason = verifyResult.failureReason ?? 'provider_error';
-    await supabase
-      .from('paiements')
-      .update({ status: 'echoue', failure_reason: failureReason })
-      .eq('id', payment.id);
-
-    const failed = await this.getPaymentById(payment.id);
-    return { status: 'failed', failureReason, payment: failed };
   },
 
-  async pollProvider(
-    provider: ReturnType<typeof getProvider>,
-    transactionId: string,
-  ) {
-    const start = Date.now();
-    while (Date.now() - start < MAX_POLL_DURATION_MS) {
-      const result = await provider.verify(transactionId);
-      if (result.status === 'success' || result.status === 'failed') {
-        return result;
-      }
-      await sleep(POLL_INTERVAL_MS);
-    }
-    return { status: 'failed' as const, failureReason: 'timeout' };
-  },
-
-  async completePayment(
-    paymentId: string,
-    ctx: {
-      providerTransactionId: string;
-      providerReference?: string;
-      paidAt?: string;
-      taxCalc: ReturnType<typeof taxService.calculateTax>;
-      contract: { id: string; bailleur_id: string };
-      tenantId: string;
-    },
-  ): Promise<Paiement> {
-    const { data: updated, error } = await supabase
-      .from('paiements')
-      .update({
-        status: 'complete',
-        provider_transaction_id: ctx.providerReference ?? ctx.providerTransactionId,
-        paid_at: ctx.paidAt ?? new Date().toISOString(),
-        notifications_sent: true,
-      })
-      .eq('id', paymentId)
-      .select()
-      .single();
-
-    if (error) throw new Error(error.message);
-
-    const receipt = await receiptService.generateReceipt(updated, ctx.taxCalc);
-
-    const { data: bailleur } = await supabase
-      .from('bailleurs')
-      .select('user_id')
-      .eq('id', ctx.contract.bailleur_id)
-      .single();
-
-    const notifications = [
-      {
-        user_id: ctx.tenantId,
-        title: 'Paiement confirmé',
-        message: `Votre paiement de ${updated.montant} ${updated.currency} a été enregistré. Reçu ${receipt.code}.`,
-        type: 'payment',
-        metadata: { payment_id: paymentId, receipt_id: receipt.id },
-      },
-    ];
-
-    if (bailleur?.user_id) {
-      notifications.push({
-        user_id: bailleur.user_id,
-        title: 'Paiement reçu',
-        message: `Un paiement de ${updated.montant} ${updated.currency} a été reçu pour la période ${updated.periode}.`,
-        type: 'payment',
-        metadata: { payment_id: paymentId, receipt_id: receipt.id },
-      });
-    }
-
-    await supabase.from('notifications').insert(notifications);
-
-    return updated;
+  /** Smart status check (terminal → DB, otherwise provider verify, rate-limited server-side). */
+  async verifyPayment(paymentId: string, options?: { force?: boolean; signal?: AbortSignal }): Promise<VerifyPaymentResponse> {
+    const body: VerifyPaymentRequest = { paymentId, force: options?.force };
+    return withRetry(() => invoke<VerifyPaymentRequest, VerifyPaymentResponse>('payment-verify', body), {
+      idempotent: true,
+      signal: options?.signal,
+      policy: { maxAttempts: 2, baseDelayMs: 500, maxDelayMs: 2000 },
+    });
   },
 
   async getPaymentStatus(paymentId: string): Promise<PaymentStatus> {
-    const payment = await this.getPaymentById(paymentId);
+    const v = await this.verifyPayment(paymentId);
     return {
-      id: payment.id,
-      status: payment.status,
-      failureReason: payment.failure_reason,
-      providerReference: payment.provider_transaction_id,
+      id: v.paymentId,
+      state: v.state,
+      status: v.status,
+      failureReason: v.failureReason,
+      providerReference: v.providerTransactionId,
+      paidAt: v.paidAt,
+      receiptId: v.receiptId,
+      receiptCode: v.receiptCode,
     };
   },
 
-  async getPaymentById(id: string): Promise<Paiement> {
-    const { data, error } = await supabase.from('paiements').select('*').eq('id', id).single();
-    if (error) throw new Error(error.message);
-    return data;
+  /** User cancellation through the state machine (only legal from draft/validating/pending/requires_action). */
+  async cancelPayment(paymentId: string, reason?: string): Promise<PaymentRecord> {
+    const { data, error } = await supabase.rpc('cancel_own_payment', { p_paiement_id: paymentId, p_reason: reason ?? null });
+    if (error) {
+      const code = error.message.includes('invalid_transition') ? 'invalid_state' : error.message.includes('forbidden') ? 'forbidden' : error.message.includes('payment_not_found') ? 'payment_not_found' : 'unknown';
+      throw new PaymentError(code, { details: error.message });
+    }
+    return data as unknown as PaymentRecord;
   },
 
-  async findByIdempotencyKey(key: string): Promise<Paiement | null> {
-    const { data, error } = await supabase
-      .from('paiements')
-      .select('*')
-      .eq('idempotency_key', key)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!data) return null;
-    const createdAt = new Date(data.created_at).getTime();
-    if (Date.now() - createdAt > IDEMPOTENCY_WINDOW_MS) return null;
-    return data;
+  /** Landlord / admin refund. Never retried automatically (the provider call is not idempotent). */
+  async refundPayment(paymentId: string, amount: number | undefined, reason: string): Promise<RefundPaymentResponse> {
+    const body: RefundPaymentRequest = { paymentId, amount, reason };
+    return invoke<RefundPaymentRequest, RefundPaymentResponse>('payment-refund', body);
   },
 
+  /** Provider catalogue (`payment_providers`) as wizard view models. */
   async getPaymentMethods(): Promise<PaymentMethod[]> {
-    return getAllProviders().map((p) => ({
-      id: p.id,
-      name: p.name,
-      icon: p.icon,
-      subtext: p.subtext,
-      supportsPartial: p.supportsPartial,
-      processingTime: p.processingTime,
-      available: true,
+    const { data, error } = await supabase
+      .from('payment_providers')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('display_name', { ascending: true });
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as PaymentProviderRecord[]).map((p) => ({
+      id: p.provider_key,
+      name: p.display_name,
+      icon: p.icon_url ?? PROVIDER_ICONS[p.provider_key] ?? 'bank',
+      subtext: p.subtext ?? '',
+      supportsPartial: p.supports_partial,
+      supportsRefund: p.supports_refund,
+      requiresPhone: p.requires_phone ?? isMobileMoneyProvider(p.provider_key),
+      processingTime: p.processing_time ?? '',
+      feePercentage: Number(p.fee_percentage),
+      feeFixed: Number(p.fee_fixed),
+      minAmount: Number(p.min_amount),
+      maxAmount: Number(p.max_amount),
+      available: p.is_active,
+      sandbox: p.is_sandbox,
     }));
+  },
+
+  async getPaymentById(id: string): Promise<PaymentRecord> {
+    const { data, error } = await supabase.from('paiements').select('*').eq('id', id).single();
+    if (error) throw new PaymentError(error.code === 'PGRST116' ? 'payment_not_found' : 'unknown', { details: error.message });
+    return data as unknown as PaymentRecord;
+  },
+
+  async getStateHistory(paymentId: string): Promise<PaymentStateTransition[]> {
+    const { data, error } = await supabase
+      .from('payment_state_history')
+      .select('*')
+      .eq('paiement_id', paymentId)
+      .order('created_at', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as PaymentStateTransition[];
   },
 
   async getPaymentsForTenant(
@@ -271,13 +183,13 @@ export const paymentService = {
       query = query.gte('periode', `${filters.year}-01`).lte('periode', `${filters.year}-12`);
     }
     if (filters?.status && filters.status !== 'all') {
-      const statusMap: Record<string, string> = {
+      const statusMap: Record<string, Paiement['status']> = {
         reussi: 'complete',
         en_attente: 'en_attente',
         echoue: 'echoue',
       };
-      const dbStatus = statusMap[filters.status] ?? filters.status;
-      query = query.eq('status', dbStatus as 'en_attente' | 'en_cours' | 'complete' | 'echoue' | 'rembourse');
+      const dbStatus = statusMap[filters.status] ?? (filters.status as Paiement['status']);
+      query = query.eq('status', dbStatus);
     }
 
     const { data, error } = await query;
@@ -288,10 +200,7 @@ export const paymentService = {
       const q = filters.search.toLowerCase();
       results = results.filter((p) => {
         const logement = (p.contrat as { logement?: { code?: string } })?.logement;
-        return (
-          p.reference.toLowerCase().includes(q) ||
-          (logement?.code?.toLowerCase().includes(q) ?? false)
-        );
+        return p.reference.toLowerCase().includes(q) || (logement?.code?.toLowerCase().includes(q) ?? false);
       });
     }
     return results;

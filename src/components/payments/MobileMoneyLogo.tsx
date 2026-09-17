@@ -14,7 +14,7 @@ const PROVIDER_COLORS: Record<string, { bg: string; text: string; label: string 
   mpesa: { bg: 'bg-green-600', text: 'text-white', label: 'M' },
   airtel_money: { bg: 'bg-red-600', text: 'text-white', label: 'A' },
   card: { bg: 'bg-blue-700', text: 'text-white', label: '💳' },
-  bank: { bg: 'bg-slate-600', text: 'text-white', label: '🏦' },
+  bank_transfer: { bg: 'bg-slate-600', text: 'text-white', label: '🏦' },
 };
 
 export function MobileMoneyLogo({ provider, size = 'md', className }: MobileMoneyLogoProps) {
