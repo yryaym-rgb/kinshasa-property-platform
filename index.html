@@ -39,6 +39,15 @@
       */
       @font-face{font-family:"Inter Fallback";src:local("Roboto"),local("Roboto-Regular"),local("Arial"),local("ArialMT"),local("Liberation Sans"),local("Arimo"),local("Helvetica Neue"),local("Helvetica");size-adjust:109%;ascent-override:98.2%;descent-override:27.5%;line-gap-override:0%}
       body{margin:0}
+      /*
+        Same scrollbar as src/styles/index.css. Without it the shell lays out
+        against Chrome's 15 px classic scrollbar and the app stylesheet later
+        widens the viewport by 7 px, so React's hero paints strictly larger than
+        the shell's and becomes a new, later LCP candidate on desktop.
+      */
+      ::-webkit-scrollbar{width:8px;height:8px}
+      ::-webkit-scrollbar-track{background:#f1f5f9}
+      ::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
       #lp-shell{--sh-navy:#0a1628;--sh-nav:80px;background:#fff;font-family:Inter,"Inter Fallback",ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
       #lp-shell .sh-nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.86);border-bottom:1px solid #e5e9f0}
       #lp-shell .sh-wrap{box-sizing:border-box;display:flex;align-items:center;height:var(--sh-nav);width:100%;max-width:1280px;margin-inline:auto;padding-inline:24px}
@@ -139,34 +148,46 @@
         #auth-shell.as--split .as-topbar{justify-content:flex-end}
       }
     </style>
-    <!-- Kick off route-critical images (and, outside the auth shell, web fonts) before any JavaScript runs. -->
+    <!-- Kick off route-critical images (and, outside the static shells, web fonts) before any JavaScript runs. -->
     <script>
       (function () {
         var path = location.pathname.replace(/\/+$/, '') || '/';
         var authPaths = ['/login', '/register', '/verify', '/forgot-password', '/reset-password'];
-        if (authPaths.indexOf(path) === -1) {
+        /*
+         * Routes with a static shell activate the web fonts later (see the shell
+         * script at the end of <body>): the shell text renders with the
+         * metric-compatible fallback, so the fonts' CSS is kept out of the
+         * critical path and off the network until the shell has painted.
+         */
+        window.__eloyerFonts = function () {
           var fonts = document.getElementById('app-fonts');
-          if (fonts) {
-            fonts.as = 'style';
-            fonts.onload = function () {
-              this.onload = null;
-              this.rel = 'stylesheet';
-            };
-            fonts.rel = 'preload';
-          }
-        }
+          if (!fonts || fonts.rel) return;
+          fonts.as = 'style';
+          fonts.onload = function () {
+            this.onload = null;
+            this.rel = 'stylesheet';
+          };
+          fonts.rel = 'preload';
+        };
+        if (authPaths.indexOf(path) === -1 && path !== '/') window.__eloyerFonts();
         if (path === '/') {
-          var heroPreload = document.createElement('link');
-          heroPreload.rel = 'preload';
-          heroPreload.as = 'image';
-          heroPreload.type = 'image/webp';
-          heroPreload.setAttribute(
-            'imagesrcset',
-            '/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w'
-          );
-          heroPreload.setAttribute('imagesizes', '100vw');
-          heroPreload.setAttribute('fetchpriority', 'high');
-          document.head.appendChild(heroPreload);
+          // Same candidates as the shell's and Hero's <picture>: below the desktop
+          // breakpoint the 1600w file is never a candidate (the photo sits under a
+          // 75–95 % overlay, so a 1024w source is indistinguishable on 3× phones).
+          [
+            { media: '(max-width: 1023px)', srcset: '/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w' },
+            { media: '(min-width: 1024px)', srcset: '/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w' },
+          ].forEach(function (candidate) {
+            var heroPreload = document.createElement('link');
+            heroPreload.rel = 'preload';
+            heroPreload.as = 'image';
+            heroPreload.type = 'image/webp';
+            heroPreload.media = candidate.media;
+            heroPreload.setAttribute('imagesrcset', candidate.srcset);
+            heroPreload.setAttribute('imagesizes', '100vw');
+            heroPreload.setAttribute('fetchpriority', 'high');
+            document.head.appendChild(heroPreload);
+          });
         }
         if (path === '/login' || path === '/register') {
           var logo = document.createElement('link');
@@ -216,7 +237,20 @@
         </header>
         <section class="sh-hero">
           <div class="sh-bg">
+            <!--
+              The photo stays invisible until it has fully loaded: a static image
+              whose first paint happens while bytes are still arriving is recorded
+              by Chrome as a *pending* LCP candidate that only becomes final on a
+              later repaint — which a static shell never triggers — so the LCP
+              would silently move to React's copy of the image.
+            -->
             <picture>
+              <source
+                media="(max-width: 1023px)"
+                srcset="/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w"
+                sizes="100vw"
+                type="image/webp"
+              />
               <source
                 srcset="/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w"
                 sizes="100vw"
@@ -230,6 +264,9 @@
                 fetchpriority="high"
                 decoding="sync"
                 elementtiming="lp-shell-hero"
+                style="visibility:hidden"
+                onload="this.style.visibility=''"
+                onerror="this.style.visibility=''"
               />
             </picture>
           </div>
@@ -319,9 +356,52 @@
         var isSplit = path === '/login' || path === '/register';
         var root = document.getElementById('root');
 
+        var activateFonts = window.__eloyerFonts || function () {};
+
         if (isLanding && root) {
           var tpl = document.getElementById('lp-shell-tpl');
           if (tpl && tpl.content) root.appendChild(tpl.content.cloneNode(true));
+          /*
+           * The hero photo is the landing LCP. Fonts (and, in production, the app
+           * bundle — the loader in vite.config.ts listens for the event below) start
+           * only once it has been presented, so nothing shares bandwidth with the LCP
+           * image. Element Timing reports the presentation itself; browsers without
+           * it fall back to the load event plus two frames.
+           */
+          var hero = root.querySelector('#lp-shell .sh-bg img');
+          var painted = false;
+          var shellPainted = function () {
+            if (painted) return;
+            painted = true;
+            activateFonts();
+            document.dispatchEvent(new Event('eloyer:shellpainted'));
+          };
+          var afterFrame = function (fn) {
+            requestAnimationFrame(function () {
+              requestAnimationFrame(fn);
+            });
+          };
+          if (!hero) {
+            afterFrame(shellPainted);
+          } else {
+            var timingId = hero.getAttribute('elementtiming');
+            var types = window.PerformanceObserver && PerformanceObserver.supportedEntryTypes;
+            if (timingId && types && types.indexOf('element') !== -1) {
+              var po = new PerformanceObserver(function (list) {
+                if (!list.getEntries().some(function (e) { return e.identifier === timingId; })) return;
+                po.disconnect();
+                shellPainted();
+              });
+              po.observe({ type: 'element', buffered: true });
+            } else {
+              var onLoad = function () { afterFrame(shellPainted); };
+              // `complete` flips before the load event (and the onload reveal) has run.
+              if (hero.style.visibility === 'hidden' || !hero.complete) hero.addEventListener('load', onLoad, { once: true });
+              else onLoad();
+            }
+            hero.addEventListener('error', function () { afterFrame(shellPainted); }, { once: true });
+          }
+          setTimeout(shellPainted, 2500);
         }
 
         if (!isAuth) {
@@ -340,13 +420,6 @@
          * to that later paint. Web fonts are therefore activated only once React has
          * swapped the shell out — one frame later, so both paint from the same metrics.
          */
-        var fonts = document.getElementById('app-fonts');
-        var fontsDone = false;
-        function activateFonts() {
-          if (fontsDone || !fonts) return;
-          fontsDone = true;
-          fonts.rel = 'stylesheet';
-        }
         if (root && 'MutationObserver' in window) {
           var mo = new MutationObserver(function () {
             if (shell.isConnected) return;
@@ -376,7 +449,7 @@
           var aside = document.createElement('aside');
           aside.className = 'as-panel';
           aside.innerHTML =
-            '<div class="as-panel__bg"><picture><source srcset="/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w" sizes="1024px" type="image/webp" /><img src="/landing/hero-kinshasa.jpg" alt="" width="1600" height="1067" fetchpriority="high" decoding="sync" elementtiming="auth-shell-panel" /></picture></div><div class="as-panel__overlay"></div><p class="as-panel__head">Bienvenue sur eLoyer Kinshasa</p>';
+            '<div class="as-panel__bg"><picture><source srcset="/landing/hero-kinshasa-750.webp 750w, /landing/hero-kinshasa-1024.webp 1024w, /landing/hero-kinshasa.webp 1600w" sizes="1024px" type="image/webp" /><img src="/landing/hero-kinshasa.jpg" alt="" width="1600" height="1067" fetchpriority="high" decoding="sync" elementtiming="auth-shell-panel" style="visibility:hidden" onload="this.style.visibility=\'\'" onerror="this.style.visibility=\'\'" /></picture></div><div class="as-panel__overlay"></div><p class="as-panel__head">Bienvenue sur eLoyer Kinshasa</p>';
           shell.insertBefore(aside, shell.firstChild);
         }
         if (!isSplit && badge) badge.hidden = false;

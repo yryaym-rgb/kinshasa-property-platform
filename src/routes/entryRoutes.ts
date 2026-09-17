@@ -7,9 +7,9 @@ import { ROUTES } from '@/config/routes';
  * Each is code-split, and `main.tsx` preloads the one matching
  * `location.pathname` *before* mounting React, so the first commit renders the
  * final page on top of the static shell (no Suspense fallback, no layout shift).
- * A Vite plugin (`routeModulePreload` in vite.config.ts) also injects
- * `<link rel="modulepreload">` hints for that route's chunks so the fetch
- * starts from the HTML, in parallel with the entry bundle.
+ * The Vite plugin `paintFirstLoader` (vite.config.ts) also emits
+ * `<link rel="modulepreload">` hints for that route's chunks from the HTML,
+ * in parallel with the entry bundle — see docs/PERFORMANCE.md.
  */
 export const LandingPage = lazyRoute(() => import('@/pages/public/LandingPage').then((m) => m.LandingPage));
 export const LoginPage = lazyRoute(() => import('@/pages/auth/LoginPage').then((m) => m.LoginPage));

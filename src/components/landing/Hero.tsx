@@ -48,7 +48,19 @@ export function Hero() {
   return (
     <section id="accueil" className="lp-hero lp-section-anchor" aria-labelledby="hero-title">
       <div className="lp-hero__bg" aria-hidden="true">
+        {/*
+          Candidates and sizes are identical to the static shell's <picture> and the
+          preloads in index.html, so React re-uses the bitmap the shell already
+          painted. Below the desktop breakpoint the 1600w file is never offered: the
+          photo sits under a 75–95 % overlay, so 1024w is indistinguishable on 3× phones.
+        */}
         <picture>
+          <source
+            media="(max-width: 1023px)"
+            srcSet={`${HERO_IMAGE.webpSm} 750w, ${HERO_IMAGE.webpMd} 1024w`}
+            sizes="100vw"
+            type="image/webp"
+          />
           <source
             srcSet={`${HERO_IMAGE.webpSm} 750w, ${HERO_IMAGE.webpMd} 1024w, ${HERO_IMAGE.webp} 1600w`}
             sizes="100vw"
