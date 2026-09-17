@@ -2,7 +2,7 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { KINSHASA_COMMUNES } from '@/config/app.config';
+import { KINSHASA_COMMUNES } from '@/config/communes';
 import type { SelectOption } from '@/types';
 
 export interface SelectProps {

@@ -10,7 +10,8 @@ import { Select, CommuneSelect } from '@/components/ui/Select';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useProperties, useArchiveProperty } from '@/hooks/useProperties';
 import { ROUTES } from '@/config/routes';
-import { KINSHASA_COMMUNES, PROPERTY_TYPES } from '@/config/app.config';
+import { PROPERTY_TYPES } from '@/config/app.config';
+import { KINSHASA_COMMUNES } from '@/config/communes';
 import type { PropertyStatus } from '@/types';
 
 type ViewMode = 'grid' | 'table';

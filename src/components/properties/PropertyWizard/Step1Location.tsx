@@ -2,7 +2,7 @@ import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { PropertyMapPicker } from '@/components/properties/PropertyMapPicker';
-import { KINSHASA_COMMUNES } from '@/config/app.config';
+import { KINSHASA_COMMUNES } from '@/config/communes';
 import type { PropertyWizardFormData } from './schema';
 
 export function Step1Location() {
