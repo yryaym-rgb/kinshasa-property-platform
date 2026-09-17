@@ -142,6 +142,11 @@ Déployer le dossier `dist/` sur Vercel, Netlify ou infrastructure gouvernementa
 - [Architecture](docs/ARCHITECTURE.md)
 - [Base de données](docs/DATABASE.md)
 - [Flux d'authentification](docs/AUTH_FLOW.md)
+- [Architecture des paiements](docs/PAYMENT_ARCHITECTURE.md)
+- [Intégration Mobile Money](docs/MOBILE_MONEY_INTEGRATION.md)
+- [Webhooks de paiement](docs/PAYMENT_WEBHOOKS.md)
+- [Moteur fiscal](docs/TAX_ENGINE.md)
+- [Référentiel des règles fiscales](docs/TAX_RULES_REFERENCE.md)
 - [Guide de contribution](docs/CONTRIBUTING.md)
 
 ## Licence
