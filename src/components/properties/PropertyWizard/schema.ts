@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { KINSHASA_COMMUNES, PROPERTY_TYPES } from '@/config/app.config';
+import { PROPERTY_TYPES } from '@/config/app.config';
+import { KINSHASA_COMMUNES } from '@/config/communes';
 import { PROPERTY_AMENITIES } from '@/utils/propertyUtils';
 
 export const propertyWizardSchema = z.object({

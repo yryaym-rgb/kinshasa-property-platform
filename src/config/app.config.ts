@@ -12,33 +12,8 @@ export const APP_CONFIG = {
   supportedLanguages: ['fr', 'en'] as const,
 } as const;
 
-/** 24 communes of Kinshasa */
-export const KINSHASA_COMMUNES = [
-  'Gombe',
-  'Lingwala',
-  'Kinshasa',
-  'Kalamu',
-  'Bandalungwa',
-  'Barumbu',
-  'Lemba',
-  'Limete',
-  'Matete',
-  'Ngiri-Ngiri',
-  'Makala',
-  'Selembao',
-  'Bumbu',
-  'Mont-Ngafula',
-  'Ndjili',
-  'Kimbanseke',
-  'Kisenso',
-  'Masina',
-  'Nsele',
-  'Maluku',
-  'Ngaliema',
-  'Kintambo',
-  'Kasa-Vubu',
-  'Mont-Amba',
-] as const;
+// The commune list lives in `./communes` so the entry chunk does not carry it.
+export type { KinshasaCommune } from './communes';
 
 export const PROPERTY_TYPES = [
   'Appartement',
@@ -116,6 +91,5 @@ export const PAGINATION = {
   pageSizeOptions: [10, 20, 50, 100],
 } as const;
 
-export type KinshasaCommune = (typeof KINSHASA_COMMUNES)[number];
 export type PropertyType = (typeof PROPERTY_TYPES)[number];
 export type PaymentProvider = (typeof PAYMENT_PROVIDERS)[number];

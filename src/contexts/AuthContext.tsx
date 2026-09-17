@@ -19,6 +19,9 @@ import {
   type RegisterDraft,
 } from '@/lib/authStorage';
 import { toE164 } from '@/lib/phone';
+import { getSupabase, hasAuthParamsInUrl, hasPersistedSession } from '@/lib/lazySupabase';
+import { isAuthPath } from '@/routes/entryRoutes';
+import type { TypedSupabaseClient } from '@/config/supabase';
 import type { AuthUser, UserProfileFormData } from '@/types';
 
 export type LoginInput =
@@ -52,12 +55,13 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// The Supabase SDK (~55 KB gzipped) is loaded on demand so no page's first
-// paint ever waits on it. Every consumer below is already async.
-const loadSupabase = () => import('@/config/supabase').then((m) => m.supabase);
+// The Supabase SDK (~55 KB gzipped) is loaded on demand through `getSupabase`
+// so no page's first paint ever waits on it. Every consumer below is already
+// async; the service module itself no longer imports the SDK statically.
 const loadAuthService = () => import('@/services/auth.service');
 
 const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'visibilitychange'] as const;
+const WARMUP_EVENTS = ['pointerdown', 'keydown', 'touchstart'] as const;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -80,16 +84,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [setUser],
   );
 
-  /* ── Session bootstrap (never blocks first paint) ─────────── */
-  useEffect(() => {
-    let cancelled = false;
-    let unsubscribe: (() => void) | undefined;
+  /* ── Lazy SDK access ──────────────────────────────────────── */
+  const clientRef = useRef<Promise<TypedSupabaseClient> | null>(null);
+  const unsubscribeRef = useRef<(() => void) | undefined>(undefined);
+  const mountedRef = useRef(false);
 
-    const initAuth = async () => {
-      setLoading(true);
-      const supabase = await loadSupabase();
-      if (cancelled) return;
-
+  // Loads the SDK once per mount and mirrors its auth events into the store.
+  // Every auth operation goes through here, so the listener is always attached
+  // by the time a session can exist.
+  const ensureClient = useCallback((): Promise<TypedSupabaseClient> => {
+    clientRef.current ??= getSupabase().then((supabase) => {
+      if (!mountedRef.current) return supabase;
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((event, newSession) => {
@@ -99,8 +104,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         if (event === 'SIGNED_OUT') clearAuth();
       });
-      unsubscribe = () => subscription.unsubscribe();
+      unsubscribeRef.current = () => subscription.unsubscribe();
+      return supabase;
+    });
+    return clientRef.current;
+  }, [setSession, clearAuth, loadUserProfile]);
 
+  /** The auth service, with the SDK listener guaranteed to be (getting) attached. */
+  const service = useCallback(() => {
+    void ensureClient().catch(() => undefined);
+    return loadAuthService();
+  }, [ensureClient]);
+
+  /* ── Session bootstrap (never blocks first paint) ─────────── */
+  useEffect(() => {
+    mountedRef.current = true;
+    let cancelled = false;
+
+    const restoreSession = async () => {
+      setLoading(true);
+      const supabase = await ensureClient();
       const {
         data: { session: currentSession },
       } = await supabase.auth.getSession();
@@ -115,24 +138,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     };
 
-    void initAuth();
+    const warm = () => {
+      WARMUP_EVENTS.forEach((event) => window.removeEventListener(event, warm));
+      void ensureClient().catch(() => undefined);
+    };
+
+    if (hasPersistedSession() || hasAuthParamsInUrl()) {
+      void restoreSession().catch(() => setLoading(false));
+    } else {
+      // Nothing to restore: the visitor is signed out and the SDK is not needed
+      // until they submit a form. On auth pages, warm it on the first tap or
+      // keystroke so the eventual sign-in/sign-up call has no download to wait for.
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+      if (isAuthPath(window.location.pathname)) {
+        WARMUP_EVENTS.forEach((event) => window.addEventListener(event, warm, { passive: true }));
+      }
+    }
+
     return () => {
       cancelled = true;
-      unsubscribe?.();
+      mountedRef.current = false;
+      WARMUP_EVENTS.forEach((event) => window.removeEventListener(event, warm));
+      unsubscribeRef.current?.();
+      unsubscribeRef.current = undefined;
+      clientRef.current = null;
     };
-  }, [setSession, setLoading, setUser, loadUserProfile, clearAuth]);
+  }, [ensureClient, setSession, setLoading, setUser, loadUserProfile]);
 
   const logout = useCallback(
     async (reason?: LogoutReason) => {
       try {
-        const { logout: authLogout } = await loadAuthService();
+        const { logout: authLogout } = await service();
         await authLogout();
       } finally {
         clearAuth();
         navigate(reason ? `${ROUTES.LOGIN}?reason=${reason}` : ROUTES.LOGIN, { replace: true });
       }
     },
-    [clearAuth, navigate],
+    [service, clearAuth, navigate],
   );
 
   /* ── Inactivity sign-out for non-remembered sessions ──────── */
@@ -165,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /* ── Password sign-in ─────────────────────────────────────── */
   const login = useCallback(
     async (input: LoginInput) => {
-      const { AuthError, signInWithPassword } = await loadAuthService();
+      const { AuthError, signInWithPassword } = await service();
       if (getLockState('login').locked) throw new AuthError('rate_limited');
 
       setRememberMe(input.rememberMe);
@@ -185,13 +230,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await loadUserProfile(result.user.id);
       navigate(destinationFor(profile), { replace: true });
     },
-    [setSession, loadUserProfile, navigate, destinationFor],
+    [service, setSession, loadUserProfile, navigate, destinationFor],
   );
 
   /* ── SMS code sign-in ─────────────────────────────────────── */
   const sendLoginCode = useCallback(
     async (phoneE164: string, rememberMe: boolean) => {
-      const { AuthError, sendOTP } = await loadAuthService();
+      const { AuthError, sendOTP } = await service();
       if (getLockState('otp-send').locked) throw new AuthError('rate_limited');
       recordAttempt('otp-send');
       setRememberMe(rememberMe);
@@ -199,28 +244,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingFlow({ type: 'login', phone: phoneE164 });
       navigate(`${ROUTES.VERIFY}?phone=${encodeURIComponent(phoneE164)}`);
     },
-    [navigate],
+    [service, navigate],
   );
 
   const resendCode = useCallback(async (phoneE164: string) => {
-    const { AuthError, sendOTP, resendSignUpOTP } = await loadAuthService();
+    const { AuthError, sendOTP, resendSignUpOTP } = await service();
     if (getLockState('otp-send').locked) throw new AuthError('rate_limited');
     recordAttempt('otp-send');
     const flow = getPendingFlow();
     if (flow?.type === 'register') await resendSignUpOTP(phoneE164);
     else await sendOTP(phoneE164, { shouldCreateUser: false });
-  }, []);
+  }, [service]);
 
   const verifyCode = useCallback(
     async (phoneE164: string, token: string) => {
-      const service = await loadAuthService();
-      if (getLockState('otp-verify').locked) throw new service.AuthError('rate_limited');
+      const auth = await service();
+      if (getLockState('otp-verify').locked) throw new auth.AuthError('rate_limited');
 
-      let result: Awaited<ReturnType<typeof service.verifyOTP>>;
+      let result: Awaited<ReturnType<typeof auth.verifyOTP>>;
       try {
-        result = await service.verifyOTP(phoneE164, token);
+        result = await auth.verifyOTP(phoneE164, token);
       } catch (error) {
-        if (error instanceof service.AuthError && (error.code === 'otp_invalid' || error.code === 'otp_expired')) {
+        if (error instanceof auth.AuthError && (error.code === 'otp_invalid' || error.code === 'otp_expired')) {
           recordAttempt('otp-verify');
         }
         throw error;
@@ -241,11 +286,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (flowType === 'register') {
         const draft = loadRegisterDraft();
         if (draft?.role) {
-          await service.completeRegistration(userId, draft);
+          await auth.completeRegistration(userId, draft);
           const document = takePendingDocument();
-          if (document) await service.uploadKycDocument(userId, document);
+          if (document) await auth.uploadKycDocument(userId, document);
           if ((draft.role === 'bailleur' || draft.role === 'agence') && draft.email) {
-            void service.requestEmailVerification(draft.email).catch(() => undefined);
+            void auth.requestEmailVerification(draft.email).catch(() => undefined);
           }
           clearRegisterDraft();
         }
@@ -255,13 +300,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await loadUserProfile(userId);
       return { redirectTo: destinationFor(profile), flow: flowType };
     },
-    [setSession, loadUserProfile, destinationFor],
+    [service, setSession, loadUserProfile, destinationFor],
   );
 
   /* ── Registration ─────────────────────────────────────────── */
   const startRegistration = useCallback(
     async (draft: RegisterDraft, password: string, document: File | null) => {
-      const { AuthError, signUpWithPhone } = await loadAuthService();
+      const { AuthError, signUpWithPhone } = await service();
       if (!draft.role) throw new AuthError('unknown');
       if (getLockState('otp-send').locked) throw new AuthError('rate_limited');
 
@@ -275,12 +320,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingFlow({ type: 'register', phone: phoneE164, email: draft.email || undefined });
       navigate(`${ROUTES.VERIFY}?phone=${encodeURIComponent(phoneE164)}`);
     },
-    [navigate],
+    [service, navigate],
   );
 
   /* ── Password reset ───────────────────────────────────────── */
   const requestPasswordReset = useCallback(async (input: PasswordResetInput) => {
-    const { AuthError, sendOTP, resetPasswordByEmail } = await loadAuthService();
+    const { AuthError, sendOTP, resetPasswordByEmail } = await service();
     if (getLockState('password-reset').locked) throw new AuthError('rate_limited');
     recordAttempt('password-reset');
 
@@ -290,21 +335,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       await resetPasswordByEmail(input.email);
     }
-  }, []);
+  }, [service]);
 
   const updatePassword = useCallback(async (password: string) => {
-    const { updatePassword: serviceUpdatePassword } = await loadAuthService();
+    const { updatePassword: serviceUpdatePassword } = await service();
     await serviceUpdatePassword(password);
-  }, []);
+  }, [service]);
 
   const updateProfile = useCallback(
     async (data: UserProfileFormData) => {
       if (!user) throw new Error('Non authentifié');
-      const { updateProfile: authUpdateProfile } = await loadAuthService();
+      const { updateProfile: authUpdateProfile } = await service();
       const updated = await authUpdateProfile(user.id, data);
       storeUpdateProfile(updated);
     },
-    [user, storeUpdateProfile],
+    [service, user, storeUpdateProfile],
   );
 
   const value = useMemo<AuthContextValue>(

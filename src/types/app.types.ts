@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import type { KINSHASA_COMMUNES, PROPERTY_TYPES, PAYMENT_PROVIDERS } from '@/config/app.config';
+import type { PROPERTY_TYPES, PAYMENT_PROVIDERS } from '@/config/app.config';
+import type { KinshasaCommune } from '@/config/communes';
 import type {
   User,
   Bailleur,
@@ -33,7 +34,7 @@ export type PropertyStatus = 'disponible' | 'occupe' | 'maintenance' | 'inactif'
 export type TaxStatus = 'calcule' | 'declare' | 'paye' | 'en_retard' | 'exonere';
 export type ComplianceLevel = 'excellent' | 'good' | 'warning' | 'critical';
 export type KycStatus = 'pending' | 'submitted' | 'verified' | 'rejected';
-export type KinshasaCommune = (typeof KINSHASA_COMMUNES)[number];
+export type { KinshasaCommune };
 
 export interface ApiResponse<T> {
   data: T;

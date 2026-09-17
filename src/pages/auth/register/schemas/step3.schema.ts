@@ -4,6 +4,7 @@ import { PASSWORD_MIN_LENGTH } from '@/lib/password';
 
 const key = (k: MessageKey) => ({ error: k });
 
+/** Step 3 — credentials. Loaded with the lazy step-3 chunk only. */
 export const registerSecuritySchema = z
   .object({
     password: z.string().check(z.minLength(PASSWORD_MIN_LENGTH, key('register.password.error'))),

@@ -13,7 +13,14 @@ import { ROUTES } from '@/config/routes';
  */
 export const LandingPage = lazyRoute(() => import('@/pages/public/LandingPage').then((m) => m.LandingPage));
 export const LoginPage = lazyRoute(() => import('@/pages/auth/LoginPage').then((m) => m.LoginPage));
-export const RegisterPage = lazyRoute(() => import('@/pages/auth/RegisterPage').then((m) => m.RegisterPage));
+// The wizard also warms the step a saved draft left off on, so a restored
+// session on step 2/3 paints its form directly instead of a skeleton.
+export const RegisterPage = lazyRoute(() =>
+  import('@/pages/auth/register/RegisterPage').then(async (m) => {
+    await m.preloadRegisterStep();
+    return m.RegisterPage;
+  }),
+);
 export const VerifyOTPPage = lazyRoute(() => import('@/pages/auth/VerifyOTPPage').then((m) => m.VerifyOTPPage));
 export const ForgotPasswordPage = lazyRoute(() =>
   import('@/pages/auth/ForgotPasswordPage').then((m) => m.ForgotPasswordPage),
