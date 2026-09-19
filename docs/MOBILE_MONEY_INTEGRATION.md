@@ -59,6 +59,28 @@ Pour simuler un webhook en sandbox, voir [PAYMENT_WEBHOOKS.md § Tests](./PAYMEN
 
 Configurer avec `supabase secrets set KEY=value` ou Dashboard → Edge Functions → Secrets. **Ne jamais committer.**
 
+### Sandbox placeholders (Dashboard → Edge Functions → Secrets)
+
+For go-live rehearsal, set these with placeholder values until merchant contracts are signed:
+
+| Secret (Dashboard name) | Code env var actually read | Placeholder |
+|---|---|---|
+| `PAYMENT_MODE` | `PAYMENT_MODE` | `sandbox` |
+| `ORANGE_MONEY_API_KEY` | `ORANGE_MONEY_API_KEY` | `placeholder` |
+| `ORANGE_MONEY_API_SECRET` | `ORANGE_MONEY_API_SECRET` | `placeholder` |
+| `ORANGE_MONEY_MERCHANT_ID` | `ORANGE_MONEY_MERCHANT_ID` | `placeholder` |
+| `ORANGE_MONEY_WEBHOOK_SECRET` | `ORANGE_MONEY_WEBHOOK_SECRET` | `placeholder` |
+| `MPESA_API_KEY` *(ops label)* | `MPESA_CONSUMER_KEY` | `placeholder` |
+| `MPESA_API_SECRET` *(ops label)* | `MPESA_CONSUMER_SECRET` | `placeholder` |
+| `MPESA_MERCHANT_ID` *(ops label)* | `MPESA_SHORTCODE` | `placeholder` |
+| `MPESA_WEBHOOK_SECRET` | `MPESA_WEBHOOK_SECRET` | `placeholder` |
+| `AIRTEL_MONEY_API_KEY` *(ops label)* | `AIRTEL_MONEY_CLIENT_ID` | `placeholder` |
+| `AIRTEL_MONEY_API_SECRET` *(ops label)* | `AIRTEL_MONEY_CLIENT_SECRET` | `placeholder` |
+| `AIRTEL_MONEY_MERCHANT_ID` | `AIRTEL_MONEY_MERCHANT_ID` | `placeholder` |
+| `AIRTEL_MONEY_WEBHOOK_SECRET` | `AIRTEL_MONEY_WEBHOOK_SECRET` | `placeholder` |
+
+Also set `INTERNAL_FUNCTION_SECRET` (random) and `APP_URL` (frontend origin). In sandbox, missing operator keys do **not** block startup (`assertRequiredEnv()` only enforces keys when `PAYMENT_MODE=production`).
+
 ### Globales
 
 | Variable | Défaut | Description |
