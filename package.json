@@ -15,7 +15,9 @@
     "test:edge": "deno task --config supabase/functions/deno.json test",
     "check:edge": "deno task --config supabase/functions/deno.json check",
     "sync:edge": "node scripts/sync-edge-shared.mjs",
-    "sync:edge:check": "node scripts/sync-edge-shared.mjs --check"
+    "sync:edge:check": "node scripts/sync-edge-shared.mjs --check",
+    "seed:governor": "node scripts/seed-governor-demo.mjs",
+    "seed:governor:dry": "node scripts/seed-governor-demo.mjs --dry-run"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",

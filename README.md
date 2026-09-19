@@ -174,6 +174,20 @@ npm run preview
 
 Déployer le dossier `dist/` sur Vercel, Netlify ou infrastructure gouvernementale.
 
+## Production deployment
+
+Full ops runbook (migrations, Edge Functions secrets, Netlify, demo seed, smoke tests):
+
+**[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
+
+Quick checklist:
+
+1. `supabase db push` on project `moxfwfxmdctkvjbfvxgx`
+2. Set Edge Function secrets (`PAYMENT_MODE=sandbox`, Mobile Money placeholders — see [MOBILE_MONEY_INTEGRATION.md](docs/MOBILE_MONEY_INTEGRATION.md))
+3. `supabase functions deploy` for all six functions under `supabase/functions/`
+4. Build and deploy `dist/` (Netlify or CI)
+5. Optional Governor dataset: `node scripts/seed-governor-demo.mjs`
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
@@ -181,6 +195,7 @@ Déployer le dossier `dist/` sur Vercel, Netlify ou infrastructure gouvernementa
 - [Flux d'authentification](docs/AUTH_FLOW.md)
 - [Architecture des paiements](docs/PAYMENT_ARCHITECTURE.md)
 - [Intégration Mobile Money](docs/MOBILE_MONEY_INTEGRATION.md)
+- [Déploiement production](docs/DEPLOYMENT.md)
 - [Webhooks de paiement](docs/PAYMENT_WEBHOOKS.md)
 - [Moteur fiscal](docs/TAX_ENGINE.md)
 - [Référentiel des règles fiscales](docs/TAX_RULES_REFERENCE.md)
